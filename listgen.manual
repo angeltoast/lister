@@ -15,14 +15,14 @@ The scripts described herein are shared in the hope that they will be useful, bu
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Introduction
-The listgen scripts were developed as part of the independent Feliz installer for the Arch Linux operating system. They are written entirely in bash, so you can edit them to suit your purposes.
+The listgen scripts were originally developed as part of the independent Feliz installer for the Arch Linux operating system. Feliz moved onto Dialog, but Listgen remains as an independent project. Listgen is written entirely in bash, so you can edit it to suit your purposes.
 
 In this guide, aimed at intermediate scripters, we will look at how the functions in the listgen module can be incorporated to help you to improve the display of information while running your own scripts.
 
 The listgen module is self-contained and application-independent. It initialises all its own variables, and contains all the functions it needs; any of the functions may be called independently from any scripts. You only have to put a copy of the listgen.sh module in the same location as your scripts, and source it, to be able to add all the features of listgen to your scripts.
 
 About The listgen functions
-The listgen functions were an integral part of the original Feliz installer since its birth, and grew with it. Eventually, Feliz moved to use Dialog, but the Listgen project remains independently. Listgen is designed to help with creating intuitive cli interfaces without using Dialog, Whiptail, or any other external package. Instead, the tput library is used to determine the terminal dimensions and to display lists and text centrally according to content.
+Listgen is designed to help with creating intuitive cli interfaces without using Dialog, Whiptail, or any other external package. Instead, the tput library is used to determine the terminal dimensions and to display lists and text centrally according to content.
 
 The functions are:
 Heading - Prints the contents of a variable $Backtitle (which may be set elsewhere in your scripts) in a banner at the centre-top of the terminal or screen.
@@ -34,8 +34,8 @@ ActiveMenu - Controls the selection and highlighting of menu items;
 listgen1 - Generates a menu of one-word items;
 listgen2 - Generates a menu of multi-word items;
 listgenx - Generates pages of numbered lists, for lists that would exceed screen size;
-SelectPage - Selects appropriate page according to user input;
-PrintPage – Displays the selected page of data, fitting as many columns as possible according to the terminal/screen size.
+SelectPage - Selects an appropriate page of data according to user input;
+PrintPage – Displays the selected page of data to the screen, fitting as many columns as possible according to the terminal/screen size.
 
 A simple example, using the 'Buttons' function
 Buttons can be used to generate an interactive Yes/No display.
@@ -44,7 +44,7 @@ A call to buttons uses three arguments:
 2) Button string. This should contain one or two words: eg: 'Ok' or 'Ok Exit'
 3) Message string.
 
-At the time of writing, Buttons is limited to displaying only two buttons, but this may be extended to three options in the near future.
+At the time of writing, Buttons is limited to displaying only two buttons, but this may be extended to three options in the future.
 
 Call Buttons with a line like this:
 Buttons "Yes/No" "Yes No" "Use arrow keys to move. [Enter] to select"
