@@ -36,7 +36,6 @@
 # CallFirstItem   440   Prints first item of a menu
 # CallNextItem    465   Prints successive menu items
 # CallPrintRev    471   Reverses text colour
-# CallGetChar     486   Capture key press (alternative)
 # CallMoveCursor  497   Respond to keypress
 # .. class List ..      Display long lists and accept user input
 # CallLister      541   Generates a numbered list of one-word items in columns
@@ -494,17 +493,6 @@ function CallPrintRev   # Prints selected item by reversing colour
     tput sgr0 	                        # Reset colour
 }
 
-function CallGetChar    # Responds to a single key press
-{ 
-    SAVEDSTTY="$(stty -g)"
-    stty -echo
-    stty -icanon
-    dd if=/dev/tty bs=1 count=1 2> /dev/null
-    stty icanon
-    stty echo
-    stty "$SAVEDSTTY"
-}
-
 function CallMoveCursor # Reads keyboard and returns value via GlobalResponse
 {  
     local keypress
@@ -512,9 +500,7 @@ function CallMoveCursor # Reads keyboard and returns value via GlobalResponse
     while :
     do
         tput civis &                          # Hide cursor
-        # keypress=$(CallGetChar)                 # Capture key press (alt)
         read -rsn1 keypress                   # Capture key press
-        
         case "$keypress" in
           "") # Ok/Return pressed
             tput cnorm
