@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Developed by Elizabeth Mills
-# Revision date: 11th April 2021
+# Revision date: 25th April 2021
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,70 +17,71 @@
 #            General Public License for more details.
 
 # Functions may return the content of a selected item via the global
-# variable GlobalResult, and the selected item number via GlobalResponse.
-# All other variables are to be local, and passed as parameters between functions.
+# variable GlobalResult, and the item's menu number via GlobalResponse.
+# All other variables are local, and passed as parameters between functions.
 # See lister.manual for guidance on the use of these functions
 
 # --------------------  ------------------------
 # Class/Function  Line	Purpose
 # --------------------  ------------------------
-# .. class Shared ..    Genera-purpose functions
-# CallNotFound     55   General warning message
-# CallHeading      61   Print a heading
-# CallForm         84   Aligned prompt for user-entry
+# .. class Shared ..    General-purpose functions
+# CallNotFound     54   General warning message
+# CallHeading      61   Prepare a new window with heading
+# CallForm         84   Centred prompt for user-entry
 # CallMessage     104   Prints a message with Ok button
-# CallButtons     133   Prints a row of buttons
+# CallButtons     133   Prints one or two buttons
 # .. class Menu ..      Displaying and using menus
 # CallMenu        184   Generates a simple menu of one-word items
 # CallLongMenu    311   Generates a menu of multi-word items
-# CallFirstItem   440   Prints first item of a menu
-# CallNextItem    465   Prints successive menu items
-# CallPrintRev    471   Reverses text colour
-# CallMoveCursor  497   Respond to keypress
+# CallFirstItem   449   Prints a single, centred item
+# CallNextItem    474   Prints successive aligned items
+# CallPrintRev    480   Reverses text colour at appointed position
+# CallMoveCursor  495   Respond to keypress
 # .. class List ..      Display long lists and accept user input
-# CallLister      541   Generates a numbered list of one-word items in columns
-# CallSelectPage  668   Used by CallLister to manage page handling
-# CallPrintPage   737   Used by CallLister to display selected page
+# CallLister      538   Generates a numbered list of one-word items in columns
+# CallSelectPage  665   Used by CallLister to manage page handling
+# CallPrintPage   734   Used by CallLister to display selected page
 # --------------------  ------------------------
 
 # Global variables
 GlobalResponse=0                # Output (menu item number)
 GlobalResult=""                 # Output (menu item text)
 GlobalCursorRow=0               # For alignment across functions
-GlobalBacktitle="Feliz - Independent Arch Linux Install Script"
+GlobalBacktitle="~ LISTER ~"
 
 # class Shared
 # }
-function CallNotFound
-{
-  PrintOne "Please try again"
-  CallButtons "Yes/No" "Ok"
+function CallNotFound   # Errror reporting
+{   # Optional message text
+    CallHeading
+    PrintOne "$1 Please try again ..."
+    CallButtons "Ok" 1 9
 }
 
 function CallHeading    # Always use this function to prepare the screen
 { 
-  clear
+    clear
+    
+    local winwidth limit text textlength startpoint
+    
+    winwidth=$(tput cols)                     # Recheck window width  
+    text="$Backtitle"                         # Use Global variable
+    textlength=$(echo $text | wc -c)          # Count characters
+      
+    if [ $textlength -ge $winwidth ]; then    # If text too long for window
+        limit=$((winwidth-2))                   # Limit to 2 characters lt winwidth
+        text="${text:0:$limit}"                 # Limit length of printed text
+        textlength=$(echo $text | wc -c)        # Recount
+    fi
+    
+    startpoint=$(( (winwidth - textlength) / 2 )) # Horizontal startpoint
+    tput cup 0 $startpoint                     # Move cursor to startpoint
+    tput bold                                 # Display will be bold
+    printf "%-s\\n" "$text"
+    tput sgr0                                 # Reset colour inversion
+} # End CallHeading
 
-  local winwidth limit text textlength startpoint
-
-  winwidth=$(tput cols)             # Recheck window width  
-  text="$Backtitle"                 # Use Global variable
-  textlength=$(echo $text | wc -c)  # Count characters
-  
-  if [ $textlength -ge $winwidth ]; then  # If text too long for window
-    limit=$((winwidth-2))                 # Limit to 2 characters lt winwidth
-    text="${text:0:$limit}"               # Limit length of printed text
-    textlength=$(echo $text | wc -c)      # Recount
-  fi
-
-  startpoint=$(( (winwidth - textlength) / 2 )) # Horizontal startpoint
-  tput cup 0 $startpoint                     # Move cursor to startpoint
-  tput bold                               # Display will be bold
-  printf "%-s\\n" "$text"
-  tput sgr0                               # Reset colour inversion
-}
-
-function CallForm    # Aligned prompt for user-entry - $1 Text for prompt
+function CallForm    # Aligned prompt for user-entry - $1 = Text for prompt
 {   # Returns user entry through $GlobalResponse
 
     local winwidth length startpoint empty
@@ -98,11 +99,11 @@ function CallForm    # Aligned prompt for user-entry - $1 Text for prompt
     fi
     empty="$(printf '%*s' $startpoint)"
     read -p "$empty $1" GlobalResponse
-}
+} # End CallForm
 
 function CallMessage    # Display a message with an 'Ok' button to close
 {                       # $1 = message text
-   
+
    local winwidth text textlength textRow buttonRow startpoint
    
    if [ ! "$1" ]; then text="No message passed"; else text="$1"; fi
@@ -121,13 +122,11 @@ function CallMessage    # Display a message with an 'Ok' button to close
 
    textRow=$(tput lines)
    textRow=$((textRow / 3))
-   tput cup $textRow $startpoint                      # Move cursor to startpoint
+   tput cup $textRow $startpoint                # Move cursor to startpoint
    printf "%-s\\n" "$text"
    buttonRow=$((textRow + 2))
 
    CallButtons "Ok" 1 $buttonRow                # Print ok button
-   GlobalResponse="$?"
-   
 } # End CallMessage
 
 function CallButtons
@@ -176,10 +175,10 @@ function CallButtons
     if [ $selected -eq 2 ]; then tput rev; fi   # Reverse colour
     printf "%-s\\n" "$button2string"            # Print button2
     tput sgr0 	                                # Reset colour
-    
+    return $selected
 } # End CallButtons
 # } End class Shared
-#
+
 # class Menu
 # {
 function CallMenu  # Simple menu returning outcone via return value
@@ -307,7 +306,7 @@ function CallMenu  # Simple menu returning outcone via return value
         *) continue   # Do nothing
       esac
     done
-}
+} # End CallMenu
 
 function CallLongMenu    # Advanced menuing function with extended descriptions
 {   # $1 The name of the file containing the verbose menu items
@@ -445,7 +444,7 @@ function CallLongMenu    # Advanced menuing function with extended descriptions
         *) continue   # Do nothing
         esac
     done
-}
+} # End CallLongMenu
 
 function CallFirstItem  # Aligned text according to screen size
 {                       # $1 Text to print
@@ -469,13 +468,13 @@ function CallFirstItem  # Aligned text according to screen size
     tput cup $GlobalCursorRow $startpoint           # Move cursor to startpoint
       
     printf "%-s\\v" "$textprint"                    # Print the item
-    GlobalCursorRow=$((GlobalCursorRow+1))                      # Advance line counter
-}
+    GlobalCursorRow=$((GlobalCursorRow+1))          # Advance line counter
+} # End CallFirstItem
 
-function CallNextItem   # Subsequent item(s) in an aligned list
-{                   # $1 startpoint; $2 Item text
+function CallNextItem   # Subsequent item in an aligned list
+{                       # $1 startpoint; $2 Item text
   tput cup "$GlobalCursorRow" "$1"  # Move cursor to row and startpoint
-  printf "%-s\\n" "$2"          # Print with a following newline
+  printf "%-s\\n" "$2"              # Print with a following newline
 }
 
 function CallPrintRev   # Prints selected item by reversing colour
@@ -501,6 +500,7 @@ function CallMoveCursor # Reads keyboard and returns value via GlobalResponse
     do
         tput civis &                          # Hide cursor
         read -rsn1 keypress                   # Capture key press
+        
         case "$keypress" in
           "") # Ok/Return pressed
             tput cnorm
@@ -530,9 +530,9 @@ function CallMoveCursor # Reads keyboard and returns value via GlobalResponse
         *)  keypress=""
         esac
     done
-}
+} # End CallMoveCursor
 # } End class Menu
-#
+
 # class List
 # {
 function CallLister  # Generates a (potentially multi-page) list from a file.
@@ -660,7 +660,7 @@ function CallLister  # Generates a (potentially multi-page) list from a file.
     pageNumber=1   # Start at first page
     lastPage=1
     CallSelectPage "$pageNumber" "$lastPage" "$winHeight" "$winCentre" "$headline" "$message"
-}
+} # End CallLister
 
 function CallSelectPage     # Organises a (nominated) pageful of data for display
 {   # $1 pageNumber; $2 lastPage; $3 = winHeight; $4 = winCentre $5 = headline $6 message
@@ -729,7 +729,6 @@ function CallSelectPage     # Organises a (nominated) pageful of data for displa
             esac
         esac
       done
-      
 } # End CallSelectPage
 
 function CallPrintPage      # Prints the page prepared and selected in CallSelectPage
@@ -827,5 +826,5 @@ function CallPrintPage      # Prints the page prepared and selected in CallSelec
             done
         esac
     done
-}
+} # End CallPrintPage
 # } End class List

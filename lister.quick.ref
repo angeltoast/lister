@@ -1,0 +1,121 @@
+The 'lister' library consists of the following functions, sorted into token 'classes':
+-----------------------------------------------
+.. Shared class .. General-purpose functions ..
+-----------------------------------------------
+CallNotFound      Displays a warning message to inform user of a problem.
+                  May be called from any error-trapping code.
+                  Optional parameter: 
+                  $1 A short text message.
+                  Returns: No values are set
+------------------------------------------------------------------------------
+CallHeading       Clears the active window and prints a heading.
+                  Uses the global variable 'Backtitle' for the heading.
+                  Returns: No values are set.
+------------------------------------------------------------------------------
+CallForm          Prints a centred prompt for user to enter data.
+                  Expects one parameter: 
+                  $1 A short text message to instruct the user.
+                  Sets $GlobalResult with the text entered by the user.
+------------------------------------------------------------------------------
+CallMessage       Prints an informative message with an Ok button.
+                  Optional parameter: 
+                  $1 A short text message
+                  Returns: No values are set
+------------------------------------------------------------------------------
+CallButtons       Prints a row of buttons
+                  Parameters: 
+                  $1 Button text (eg: "Ok" for one button, or "Yes No" for two; 
+                  $2 Which button to highlight (numeric: 1=left or 2=right);
+                  $3 The row of the window on which the buttons are to be printed:
+                     (this should normally be within the range 0 to 24);
+                  Sets the return code $? to the number of the button selected.
+----------------------------------------------
+.. Menu class .. Displaying and using menus ..
+----------------------------------------------
+CallMenu          Generates a simple menu of one-word items, centred on the page.
+                  Parameters:
+                  $1 String of single-word menu items ...
+                    (max 15 advised, as we don't want to go off the screen);
+                  $2 Button text, eg: 'Ok Exit';
+                  $3 May be a prompt message or empty.
+                  Sets the return code $? to the number in the menu of the item
+                  selected.
+------------------------------------------------------------------------------
+CallLongMenu      Generates a menu of multi-word items.
+                  Parameters:
+                  $1 The name of a file containing the verbose menu items;
+                  $2 Optional button text, eg: 'Ok Exit'
+                      (if empty will default to 'Ok Exit');
+                  $3 Optional message
+                      (if $3 is required, $2 must be passed, even if null);
+                  Notes:
+                  CallLongMenu requires the named file to exist, or it will abort.
+                  The named file containing the verbose menu items ...
+                      1) Should have one item to a line; 
+                      2) Each line no longer than 50 characters ...
+                          (we don't want to go off the screen, do we?)
+                  Sets the return code $? to the number in the menu of the item
+                  selected.
+------------------------------------------------------------------------------
+CallFirstItem     Prints a single item, centred, at the top of the page.
+                  Parameter: 
+                  $1 Text to print;
+                  Sets $GlobalCursoRow for any successive print instructions.
+------------------------------------------------------------------------------
+CallNextItem      Prints the next item of a menu
+                  Parameters:
+                  $1 startpoint; $2 Item text.
+                  Sets $GlobalCursoRow for any successive print instructions.
+------------------------------------------------------------------------------
+CallPrintRev      Prints a menu item in reverse text colour ...
+                      (matched to the length of the longest item in the menu).
+                  Parameters:
+                  $1 Startpoint (horizontal position of the first character);
+                  $2 Length of the longest menu item (in characters);
+                  $3 Item text
+                  Sets $GlobalCursoRow for any successive print instructions.
+------------------------------------------------------------------------------
+CallMoveCursor    Respond to user keypress (cursor keys and Enter)...
+                      (used by CallMenu and CallLongMenu).
+                  No parameters.
+                  Sets $GlobalResponse with a number representing the key pressed:
+                      (0=Enter; 1=Up; 2=Left; 3=Down; 4=Right)
+------------------------------------------------------------
+.. List class .. Display long lists and accept user input ..
+------------------------------------------------------------
+CallLister        Prepares arrays for use by CallSelectPage and CallPrintPage
+                  to generate a (potentially multi-page) numbered list from a
+                  file
+                  Parameters:
+                    $1 Optional 'headline' text to appear at the top of the screen
+                    $2 Optional text to appear at the bottom of the screen...
+                        1) If empty, $2 will default to ...
+                          'Please enter the number of your selection: '
+                        2) If $2 is set, then $1 must be passed, even if empty;
+                  Requirement:
+                  The calling function must first create a file containing the
+                  items to be listed, before calling CallLister.
+                  The file must be named 'input.file';
+                  The file must have one word per item, one item per line.
+                  Returns: No values are set
+------------------------------------------------------------------------------
+CallSelectPage    Used by CallLister to manage page handling.
+                  The arrays used here are declared and initialised in
+                  CallLister as global in scope.
+                  Parameters (all set by CallLister):
+                  $1 pageNumber; $2 lastPage; $3 = winHeight;
+                  $4 = winCentre $5 = headline $6 message
+                  Returns: No values are set
+------------------------------------------------------------------------------
+CallPrintPage     Displays the selected page, then waits for the user to enter
+                  a number. The items are printed in columns, to show as many
+                  as possible.
+                  Parameters (all set by CallSelectPage):
+                  $1 winHeight; $2 winCentre; $3 instructions; $4 headline;
+                  $5 message; $6 pageNumber; $7 lastItem
+                  The arrays used here are declared and initialised in
+                  CallLister as global in scope
+                  Sets return vaue $? to the number of the item selected.
+                  Also sets $GlobalResponse to the user input (item number)
+                  and $GlobalResult to the detail of the menu item.
+------------------------------------------------------------------------------
