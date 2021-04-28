@@ -86,12 +86,7 @@ CallMoveCursor    Respond to user keypress (cursor keys and Enter)...
 CallLister        Prepares arrays for use by CallSelectPage and CallPrintPage
                   to generate a (potentially multi-page) numbered list from a
                   file
-                  Parameters:
-                    $1 Optional 'headline' text to appear at the top of the screen
-                    $2 Optional text to appear at the bottom of the screen...
-                        1) If empty, $2 will default to ...
-                          'Please enter the number of your selection: '
-                        2) If $2 is set, then $1 must be passed, even if empty;
+                  Parameters: None
                   Requirement:
                   The calling function must first create a file containing the
                   items to be listed, before calling CallLister.
@@ -103,19 +98,17 @@ CallSelectPage    Used by CallLister to manage page handling.
                   The arrays used here are declared and initialised in
                   CallLister as global in scope.
                   Parameters (all set by CallLister):
-                  $1 pageNumber; $2 lastPage; $3 = winHeight;
-                  $4 = winCentre $5 = headline $6 message
+                  $1 = winHeight; $2 = winCentre; $3 lastPage;
                   Returns: No values are set
 ------------------------------------------------------------------------------
 CallPrintPage     Displays the selected page, then waits for the user to enter
                   a number. The items are printed in columns, to show as many
                   as possible.
                   Parameters (all set by CallSelectPage):
-                  $1 winHeight; $2 winCentre; $3 instructions; $4 headline;
-                  $5 message; $6 pageNumber; $7 lastItem
+                  $1 winHeight; $2 winCentre; $3 instructions;
+                  $4 pageNumber; $5 lastItem
                   The arrays used here are declared and initialised in
                   CallLister as global in scope
-                  Sets return vaue $? to the number of the item selected.
-                  Also sets $GlobalResponse to the user input (item number)
+                  Sets $GlobalResponse to the user input (item number)
                   and $GlobalResult to the detail of the menu item.
 ------------------------------------------------------------------------------

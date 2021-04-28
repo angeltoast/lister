@@ -24,23 +24,23 @@
 # --------------------  ------------------------
 # Class/Function  Line	Purpose
 # --------------------  ------------------------
-# .. class Shared ..    General-purpose functions
+# .. Shared class ..    General-purpose functions
 # CallNotFound     54   General warning message
 # CallHeading      61   Prepare a new window with heading
 # CallForm         84   Centred prompt for user-entry
-# CallMessage     104   Prints a message with Ok button
-# CallButtons     133   Prints one or two buttons
-# .. class Menu ..      Displaying and using menus
-# CallMenu        184   Generates a simple menu of one-word items
-# CallLongMenu    311   Generates a menu of multi-word items
-# CallFirstItem   449   Prints a single, centred item
-# CallNextItem    474   Prints successive aligned items
-# CallPrintRev    480   Reverses text colour at appointed position
-# CallMoveCursor  495   Respond to keypress
-# .. class List ..      Display long lists and accept user input
-# CallLister      538   Generates a numbered list of one-word items in columns
-# CallSelectPage  665   Used by CallLister to manage page handling
-# CallPrintPage   734   Used by CallLister to display selected page
+# CallMessage     102   Prints a message with Ok button
+# CallButtons     130   Prints one or two buttons
+# .. Menu class ..      Displaying and using menus
+# CallMenu        182   Generates a simple menu of one-word items
+# CallLongMenu    309   Generates a menu of multi-word items
+# CallFirstItem   447   Prints a single, centred item
+# CallNextItem    472   Prints successive aligned items
+# CallPrintRev    478   Reverses text colour at appointed position
+# CallMoveCursor  493   Respond to keypress
+# .. List class ..      Display long lists and accept user input
+# CallLister      536   Generates a numbered list of one-word items in columns
+# CallSelectPage  661   Used by CallLister to manage page handling
+# CallPrintPage   728   Used by CallLister to display selected page
 # --------------------  ------------------------
 
 # Global variables
@@ -81,24 +81,22 @@ function CallHeading    # Always use this function to prepare the screen
     tput sgr0                                 # Reset colour inversion
 } # End CallHeading
 
-function CallForm    # Aligned prompt for user-entry - $1 = Text for prompt
-{   # Returns user entry through $GlobalResponse
+function CallForm    # Aligned prompt for user-entry
+{   # $1 Text for prompt
+    # Returns user entry through $GlobalResponse
 
     local winwidth length startpoint empty
   
     winwidth=$(tput cols)
     length=${#1}
-    startpoint=0
       
-    if [ ${length} -lt ${winwidth} ]; then
+    if [ ${length} -le ${winwidth} ]; then
         startpoint=$(( (winwidth - length) / 2 ))
-    elif [ ${length} -gt ${winwidth} ]; then
-        startpoint=0
     else
-        startpoint=$(( (winwidth - 10) / 2 ))
+        startpoint=0
     fi
-    empty="$(printf '%*s' $startpoint)"
-    read -p "$empty $1" GlobalResponse
+    tput cup $GlobalCursorRow $startpoint                     # Move cursor to startpoint
+    read -p "$1" GlobalResponse
 } # End CallForm
 
 function CallMessage    # Display a message with an 'Ok' button to close
@@ -451,7 +449,7 @@ function CallFirstItem  # Aligned text according to screen size
 
     local winwidth maxlen textprint textlength startpoint
 
-    GlobalCursorRow=1   # First item on first row (logical, aye?)
+    # GlobalCursorRow=1   # First item on first row (logical, aye?)
       
     winwidth=$(tput cols)                   # Recheck window width  
     maxlen=$((winwidth-2))                  # Set Limit to 2 characters < Width
@@ -536,13 +534,10 @@ function CallMoveCursor # Reads keyboard and returns value via GlobalResponse
 # class List
 # {
 function CallLister  # Generates a (potentially multi-page) list from a file.
-{   # The calling function creates input.file(1*) before calling CallLister
-    # $1 Optional 'headline' text to appear at the top of the screen
-    # $2 Optional(2*) 'message' to appear at the bottom of the screen.
-    #       (1*) input.file must have one word per item, one item per line
-    #       (2*) If $2, then $1 must be passed, even if empty
+{   # The calling function creates input.file* before calling CallLister
+    #       * input.file must have one word per item, one item per line
 
-        local headline message totalItems lastItem itemLen testLen
+        local totalItems lastItem itemLen testLen
         local winWidth displayWidth winCentre winHeight 
         local topRow bottomRow itemsInColumn counter
         local page pageNumber pageWidth columnWidth lastPage 
@@ -560,7 +555,7 @@ function CallLister  # Generates a (potentially multi-page) list from a file.
         pageNumber=1            # Page selector
         pageWidth=4             # Start width accumulator with margins
         columnWidth=0
-        lastpage=0
+        lastPage=0
 
         # Establish terminal size and set variables
         winWidth=$(tput cols)               # Start with full terminal width
@@ -568,211 +563,210 @@ function CallLister  # Generates a (potentially multi-page) list from a file.
         winCentre=$((winWidth/2))           # page centre used to calculate start point
         winHeight=$(tput lines)             # Full height of terminal
         topRow=4                            # Leave space for heading
-        GlobalCursorRow=$topRow             # Start cursor at top row
+        GlobalCursorRow=1                   # Start cursor at top of page
         bottomRow=$((winHeight-4))          # Leave space for footer
         itemsInColumn=$((bottomRow-topRow)) # Number of items in each column
-        headline="$1"
-
-        if [ "$2" ]; then
-            message="$2"
-        else
-            message="Please enter the number of your selection: "
-        fi
 
         grep -v '^$' input.file > temp.file     # Make a clean working copy
 
         totalItems=$(cat temp.file | wc -l)
         lastItem="$(tail -n 1 temp.file)"
 
-        tput cnorm                              # Ensure cursor is visible
+        tput cnorm   # Ensure cursor is visible
 
         CallHeading  # Prepare the window
 
-        # Fill the array of columns
-        widthOfColumns=2  
+        # Fill the global array of columns. Each element in the array holds one column
+        widthOfColumns=2
         counter=0         
-        recordNumber=0   
-        while [ $recordNumber -le $totalItems  ] # ... Outer loop for entire file
+        recordNumber=0
+        # Start outer loop for entire file
+        while [ $recordNumber -le $totalItems  ]
         do
-            testLen=0 
-            Column="" 
-            for (( line=1; line <= $itemsInColumn; ++line )) # ... Column loop
-            do
-                recordNumber=$((recordNumber+1))
-                item=$(head -n $recordNumber temp.file | tail -1)  # Read item from file
-                itemLen=${#item}                            # Measure length
-                itemLen=$((itemLen+3))                      # Add column spacing
+            testLen=0  
+            Column=""  
+            # Inner loop:
+            # Get length of each item in each column (save length of longest in each column)
+            # Then add just enough to each array element to fit the window height
+            for (( line=1; line <= $itemsInColumn; ++line ))
+            do  
+                recordNumber=$((recordNumber+1))  # Starts at 0, so add one for real number 
+                item=$(head -n $recordNumber temp.file | tail -1)   # Read item from file     
+                itemLen=${#item}                                    # Measure length                 
+                itemLen=$((itemLen+3))                              # Add column spacing           
                 if [ $itemLen -gt $testLen ]; then
-                    testLen=$itemLen                        # Save greatest length
+                    testLen=$itemLen            # If longest in this column, save length         
                 fi
            
-                if [ $recordNumber -gt $totalItems ]; then  # If last record
+                if [ $recordNumber -gt $totalItems ]; then      # Exit loop if last record          
                     break
                 else
-                    Column="$Column $item"                      # Save this record in string
+                    Column="$Column $item"              # Add this item to string variable
                 fi
-   
-            done # .... End of column loop ####
+            done # ....  End of inner (column) loop 
        
-            numberOfColumns=$((numberOfColumns+1))        # Increment columns counter
-            GlobalColumnsArray[${numberOfColumns}]="${Column}"    # Save this column to the array
-            GlobalColumnWidthsArray[${numberOfColumns}]=$testLen  # Save the width of this column
-            Column=""                                     # Empty the string for next column
+            numberOfColumns=$((numberOfColumns+1))      # Increment columns counter
+            # Add this column to the columns array, and its width to the widths array
+            GlobalColumnsArray[${numberOfColumns}]="${Column}"
+            GlobalColumnWidthsArray[${numberOfColumns}]=$testLen 
+            Column=""   # Empty the string variable for the next column   
 
-        done 
+        done        # End of outer (file) loop
 
-    rm temp.file   # Tidy up
+    rm temp.file    # Tidy up
 
-    while :  # Now build all GlobalPagesArray, before proceeding to page-handling in CallSelectPage
-    do
-        for (( column=1; column <= $numberOfColumns; ++column )) # Build a page
+    # Now build GlobalPagesArray with just enough columns to fit page width each time
+    while :  # These elements are numeric (column numbers). The records are still
+    do       # in GlobalColumnsArray. Iterate through each element of GlobalColumnsArray
+        for (( column=1; column <= $numberOfColumns; ++column ))
         do
             if [ $((pageWidth+columnWidth+4)) -ge $displayWidth ]; then
-                                                      # If adding another column would exceed
-                GlobalPageWidthsArray[${pageNumber}]=$pageWidth  # page width, save this page's width
-                pageWidth=4                           # and reset variable for next page
-                GlobalPagesArray[${pageNumber}]="${page}"  # Copy the list of columns to array
-                pageNumber=$((pageNumber+1))          # Then set next page, advance page counter, and
-                page=""                               # empty string for next list of columns
+                # If adding another column would exceed page width, save this page's width
+                GlobalPageWidthsArray[${pageNumber}]=$pageWidth
+                pageWidth=4    # and reset the variable for the next page
+                # Copy the list of columns to the pages array
+                # Note: This will not be triggered on the first iteration
+                GlobalPagesArray[${pageNumber}]="${page}"
+                # Then set next page, advance page counter
+                pageNumber=$((pageNumber+1)) 
+                page=""     # And empty the string variable for next list of columns
             fi
 
             columnWidth=0
-            for item in ${GlobalColumnsArray[${column}]} # Test the length of each string
-            do
+            for item in ${GlobalColumnsArray[${column}]}
+            do                                         # Test the length of each string
                 itemLen=${#item}
                 if [ $itemLen -gt $columnWidth ]; then
-                    columnWidth=$((itemLen+3))         # Longest item plus spaces between columns
+                    columnWidth=$((itemLen+3))         # Reset, including spaces between columns
                 fi
             done
-            if [ $((pageWidth+columnWidth+1)) -lt $winWidth ]; then # page is not full
-                pageWidth=$((pageWidth+columnWidth+1)) # Add column width to page width accumulator
+          
+            # Check total width of columns does not exceed page width.
+            if [ $((pageWidth+columnWidth+4)) -lt $winWidth ]; then # If page is not full ...
+                pageWidth=$((pageWidth+columnWidth+4)) # Add column width to page width accumulator
                 page="$page $column"                   # and append the column number to this page
             fi
-            if [ $column -eq $numberOfColumns ]; then  # Last column
-                lastpage=$pageNumber
-                GlobalPageWidthsArray[${pageNumber}]=$pageWidth
-                GlobalPagesArray[${pageNumber}]="${page}" # Copy the list of columns to array
+            if [ $column -eq $numberOfColumns ]; then  # Last column reached
+                lastPage=$pageNumber                   # Save
+                GlobalPageWidthsArray[${pageNumber}]=$pageWidth # Add to arrays
+                GlobalPagesArray[${pageNumber}]="${page}" 
                 break 2
             fi
         done
     done
-
-    pageNumber=1   # Start at first page
-    lastPage=1
-    CallSelectPage "$pageNumber" "$lastPage" "$winHeight" "$winCentre" "$headline" "$message"
+    #  Proceed to page-handling in CallSelectPage
+    CallSelectPage $winHeight $winCentre $lastPage
 } # End CallLister
 
-function CallSelectPage     # Organises a (nominated) pageful of data for display
-{   # $1 pageNumber; $2 lastPage; $3 = winHeight; $4 = winCentre $5 = headline $6 message
+function CallSelectPage    # Organises a (nominated) pageful of data for display
+{       # $1 = winHeight; $2 = winCentre; $3 = lastPage
 
     local pageNumber lastPage advise previous next instructions instrLen
-    local winHeight winCentre headline message
-    
-    pageNumber=$1
-    lastPage=$2
-    winHeight=$3
-    winCentre=$4
-    headline="$5"
-    message="$6"
-    advise="or [Enter] to exit without choosing" 
+    local winHeight winCentre
+
+    pageNumber=1   # Start at first page
+    winHeight=$1
+    winCentre=$2
+    lastPage=$3
+    advise="or ' ' to exit without choosing" 
     previous="Enter '<' for previous page"
     next="Enter '>' for next page"
-   
+
+    # Display appropriate page according to user input
     while :
     do
-        # Display appropriate page according to user input
         case $pageNumber in
-        1) if [ $lastPage -gt 1 ]; then   # On page 1, with more than 1 page in total
-                instructions="$next - $advise"
+        1)  if [ $lastPage -gt 1 ]; then   # On page 1, with more than 1 page in total
+                instructions="$next"
             else
-                instructions="$advise"
+                instructions=""
             fi
-            instrLen=${#instructions}
-            
-            CallPrintPage "$winHeight" "$winCentre" "$instructions" "$headline" "$message" "$pageNumber" "$lastItem"
-              
-            case $? in                       # Return will be 0, 1, or 2
-            1)  continue                      # < (left arrow) = illegal call to previous page
-                ;;
+            GlobalCursorRow=1                       # Reset cursor to top of page
+            CallPrintPage "$winHeight" "$winCentre" "$instructions" "$pageNumber" "$lastItem"
+ 
+            case $? in           # Return code from CallPrintPage will be 0, 1, or 2
+            1)  continue         # < (left arrow) = illegal call to previous page
+            ;;
             2)  if [ $lastPage -gt 1 ]; then  # On page 1, with more than 1 page in total
                     pageNumber=$((pageNumber+1)) # > (right arrow) = next page
                     continue
                 fi
-                ;;
+            ;;
             *)  break                        # 0 : an item was selected or 'Exit' entered
             esac
-            ;;
-            $lastPage) instructions="$previous - $advise"
-            instrLen=${#instructions}
-            CallPrintPage "$winHeight" "$winCentre" "$instructions" "$headline" "$message" "$pageNumber" "$lastItem"
-            case $? in                      # Return will be 0, 1, or 2
+        ;; 
+        $lastPage) instructions="$previous"
+            GlobalCursorRow=1                       # Reset cursor to top of page
+            CallPrintPage "$winHeight" "$winCentre" "$instructions" "$pageNumber" "$lastItem"
+            case $? in                       # Return will be 0, 1, or 2
             1)  pageNumber=$((pageNumber-1)) # < (left arrow) = previous page
-                ;;
+            ;;
             2)  continue                     # > (right arrow) = illegal call to next page
-                ;;
+            ;;
             *)  break                        # 0 : an item was selected or 'Exit' entered
             esac
-            ;;
-        *)  instructions="$previous - $advise - $next"
-           # instrLen=${#instructions}
-            CallPrintPage "$winHeight" "$winCentre" "$instructions" "$headline" "$message" "$pageNumber" "$lastItem"
-            case $? in                          # Return will be 0, 1, or 2
-            1)  if [ $pageNumber -gt 1 ]; then   # Not on page 1
+        ;;
+        *)  instructions="$previous - $next"
+            GlobalCursorRow=1                       # Reset cursor to top of page
+         
+            CallPrintPage "$winHeight" "$winCentre" "$instructions" "$pageNumber" "$lastItem"
+            case $? in                              # Return will be 0, 1, or 2
+            1)  if [ $pageNumber -gt 1 ]; then      # Not on page 1
                     pageNumber=$((pageNumber-1))    # < (left arrow) = previous page
                 fi
-                ;;
-            2) if [ $pageNumber -lt $lastPage ]; then   # Not on last page
-                pageNumber=$((pageNumber+1))      # > (right arrow) = next page
+            ;;
+            2)  if [ $pageNumber -lt $lastPage ]; then   # Not on last page
+                    pageNumber=$((pageNumber+1))        # > (right arrow) = next page
                 fi
-                ;;
-            *) break                            # 0 : an item was selected or '' entered
+            ;;
+            *)  break                            # 0 : an item was selected or '' entered
             esac
         esac
-      done
+    done
 } # End CallSelectPage
 
 function CallPrintPage      # Prints the page prepared and selected in CallSelectPage
-{  # $1 winHeight; $2 winCentre; $3 instructions; $4 headline; $5 message; $6 pageNumber; $7 lastItem
+{  # $1 winHeight; $2 winCentre; $3 instructions; $4 pageNumber; $5 lastItem;
    # The arrays used here are declared and initialised in CallLister as global in scope
    
-    local headline pageWidth columnStart thisPage pageNumber
-    local counter columnWidth instructions instrLen lastItem
-    local winHeight winCentre lenHeadline startPoint
+    local pageWidth columnStart thisPage pageNumber
+    local counter columnWidth instructions instrLen lastItem advisLen
+    local winHeight winCentre startPoint topRow
 
     winHeight=$1
     winCentre=$2
     instrLen=${#3}
     instructions="$3"
-    headline="$4"
-    message="$5"
-    pageNumber="$6"
-    lastItem="$7"
-    
+    pageNumber="$4"
+    lastItem="$5"
+    counter=1
+
     CallHeading $Backtitle    # Prepare window
-      
-    if [ "$headline" ]; then
-       CallFirstItem "$headline"
-    fi
- 
+    
+    CallFirstItem "Page $pageNumber of $lastPage"
+
     thisPage="${GlobalPagesArray[${pageNumber}]}"      # String of column numbers for this page
     pageWidth=${GlobalPageWidthsArray[${pageNumber}]}  # Full width of this page
-    columnStart=$(( winCentre - (pageWidth/2) -3 ))
-    GlobalCursorRow=$topRow                            # Start at top row
-  
+    columnStart=$(( winCentre - (pageWidth/2)))   
+    topRow=$((GlobalCursorRow+1))
+    GlobalCursorRow=$topRow
+ 
     while :
     do
-        counter=1
-        for column in ${thisPage}                   # Outer loop iterates through columns for
-        do                                          # this page, getting the column numbers
+        # counter=1
+        # Outer loop iterates through columns for this page, getting the column numbers
+        for column in ${thisPage} 
+        do  
             columnWidth=${GlobalColumnWidthsArray[${column}]}
 
             if [ -z "$columnWidth" ]; then
                 continue
             fi
-            
-            for item in ${GlobalColumnsArray[${column}]} # Inner loop iterates through contents of columns
+            # Inner loop iterates through contents of GlobalColumnsArray getting the 
+            for item in ${GlobalColumnsArray[${column}]} # contents of each element
             do
-                tput cup $GlobalCursorRow $columnStart   # Move cursor to print point
+                # Move cursor to print point 
+                tput cup $GlobalCursorRow $columnStart   
                 printf "%-s\n" "${counter}) $item"
                 
                 if [ $item = $lastItem ]; then
@@ -785,46 +779,48 @@ function CallPrintPage      # Prints the page prepared and selected in CallSelec
             columnStart=$((columnStart+columnWidth+2))  # Start next column at top
             GlobalCursorRow=$topRow 
         done
-    
-        instrLen=$((instrLen/2))
-        tput cup $((winHeight-2)) $((winCentre-instrLen)) # Position cursor at bottom of screen
-        echo "${instructions}"
 
-        tput cup $((bottomRow+1)) 0                    # Then back to row below bottom row
-       
-        CallForm "$message: "
+        saveStartPoint=SstartPoint
+        startPoint=$((winCentre-(instrLen/2)))
+        tput cup $((winHeight-4)) $startPoint   # Position cursor near bottom of screen
+        echo "${instructions}"                  # eg: "Enter '>' for next page"
+        adviseLen=${#advise}
+        startPoint=$((winCentre-(adviseLen/2)))
+        tput cup $((winHeight-2)) $startPoint 
+        echo "${advise}"                        # eg: "or ' ' to exit without choosing"
+        GlobalCursorRow=$((winHeight-3))
+        CallForm "Enter the number of your selection: "
+        startPoint=$saveStartPoint
        
         case $GlobalResponse in
         '') GlobalResult=""
             return 0                                    # Quit without selecting anything
-            ;;
+        ;;
         "<") return 1                                   # Previous page, if valid
-            ;;
+        ;;
         ">") return 2                                   # Next page, if valid
-            ;;
-        *[!0-9]*) CallHeading
-            if [ "$headline" ]; then
-                CallFirstItem "$headline"
-            fi
+        ;;
+        *[!0-9]*)   # CallHeading
+            # CallFirstItem "Page $pageNumber of $lastPage"
             thisPage="${GlobalPagesArray[${pageNumber}]}"      # String of column numbers for this page
-            pageWidth=${GlobalPageWidthsArray[${pageNumber}]}  # Full width of this page
-            columnStart=$(( winCentre - (pageWidth/2) -3 ))
-            GlobalCursorRow=$topRow                            # Start at top row
+            pageWidth=${GlobalPageWidthsArray[${pageNumber}]}  # Full width of this page of columns
+            columnStart=$(( winCentre - (pageWidth/2) -3 ))    # Centre it
+            GlobalCursorRow=$topRow    
             continue
-            ;;
-        *) counter=0      # Find the numbered item in the columns of this page
-            for column in ${thisPage}      # Outer loop iterates through the page
+        ;;
+        *)  counter=1    # A number has been entered. Find it in the columns of this page
+            for column in ${thisPage}     # Outer loop iterates through the page variable
             do
                 for item in ${GlobalColumnsArray[${column}]}  # Inner loop finds this item
                 do
-                    counter=$((counter+1))
                     if [ $counter -eq $GlobalResponse ]; then      
                         GlobalResult=$item                 
                         return 0
                     fi
+                    counter=$((counter+1))
                 done
             done
         esac
     done
 } # End CallPrintPage
-# } End class List
+# } End List class
