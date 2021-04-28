@@ -34,8 +34,9 @@ CallButtons       Prints a row of buttons
 ----------------------------------------------
 CallMenu          Generates a simple menu of one-word items, centred on the page.
                   Parameters:
-                  $1 String of single-word menu items ...
-                    (max 15 advised, as we don't want to go off the screen);
+                  $1 String of single-word menu items, or the name of a file 
+                  containing those items ...
+                    (max 15 advised, as we don't want to go off the screen, do we?);
                   $2 Button text, eg: 'Ok Exit';
                   $3 May be a prompt message or empty.
                   Sets the return code $? to the number in the menu of the item
@@ -85,21 +86,23 @@ CallMoveCursor    Respond to user keypress (cursor keys and Enter)...
 ------------------------------------------------------------
 CallLister        Prepares arrays for use by CallSelectPage and CallPrintPage
                   to generate a (potentially multi-page) numbered list from a
-                  file
-                  Parameters: None
+                  file.
+                  Parameter: $1 The name of the file containing the list
                   Requirement:
-                  The calling function must first create a file containing the
+                  The calling function must first create the file containing the
                   items to be listed, before calling CallLister.
-                  The file must be named 'input.file';
+                  The file name must be passed to CallLister as $1;
                   The file must have one word per item, one item per line.
-                  Returns: No values are set
+                  Returns: No values are set by CallLister (return values are set
+                  by CallPrintPage)
 ------------------------------------------------------------------------------
 CallSelectPage    Used by CallLister to manage page handling.
                   The arrays used here are declared and initialised in
                   CallLister as global in scope.
                   Parameters (all set by CallLister):
                   $1 = winHeight; $2 = winCentre; $3 lastPage;
-                  Returns: No values are set
+                  Returns: No values are set by CallSelectPage (return values are
+                  set by CallPrintPage)
 ------------------------------------------------------------------------------
 CallPrintPage     Displays the selected page, then waits for the user to enter
                   a number. The items are printed in columns, to show as many

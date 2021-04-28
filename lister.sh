@@ -102,29 +102,34 @@ function CallForm    # Aligned prompt for user-entry
 function CallMessage    # Display a message with an 'Ok' button to close
 {                       # $1 = message text
 
-   local winwidth text textlength textRow buttonRow startpoint
-   
-   if [ ! "$1" ]; then text="No message passed"; else text="$1"; fi
-   winwidth=$(tput cols)                # Recheck window width
-   textlength=${#text}                  # Get length of message
-   
-   if [ ${textlength} -lt ${winwidth} ]; then
-      startpoint=$(( (winwidth - textlength) / 2 ))
-   elif [ ${textlength} -gt ${winwidth} ]; then
-      startpoint=0
-   else
-      startpoint=$(( (winwidth - 10) / 2 ))
-   fi
+    local winwidth text textlength textRow buttonRow startpoint
+       
+    if [ ! "$1" ]; then text="No message passed"; else text="$1"; fi
+    winwidth=$(tput cols)                # Recheck window width
+    textlength=${#text}                  # Get length of message
+       
+    if [ ${textlength} -lt ${winwidth} ]; then
+        startpoint=$(( (winwidth - textlength) / 2 ))
+    elif [ ${textlength} -gt ${winwidth} ]; then
+        startpoint=0
+    else
+        startpoint=$(( (winwidth - 10) / 2 ))
+    fi
   
-   CallHeading                                  # Prepare screen
+    CallHeading                                  # Prepare screen
 
-   textRow=$(tput lines)
-   textRow=$((textRow / 3))
-   tput cup $textRow $startpoint                # Move cursor to startpoint
-   printf "%-s\\n" "$text"
-   buttonRow=$((textRow + 2))
+    textRow=$(tput lines)
+    textRow=$((textRow / 3))
+    tput cup $textRow $startpoint                # Move cursor to startpoint
+    printf "%-s\\n" "$text"
+    buttonRow=$((textRow + 2))
 
-   CallButtons "Ok" 1 $buttonRow                # Print ok button
+    
+    CallButtons "Ok" 1 $buttonRow                # Print ok button
+
+    tput civis &                                 # Hide the cursor
+    read -p ""
+    tput cnorm                                   # Ensure normal cursor
 } # End CallMessage
 
 function CallButtons
@@ -179,20 +184,36 @@ function CallButtons
 
 # class Menu
 # {
-function CallMenu  # Simple menu returning outcone via return value
-{       # $1 String of single-word menu items (not too many, mind)
+function CallMenu  # Simple menu
+{       # $1 String of single-word menu items (or the name of a file)
         # $2 button text eg: 'Ok Exit'
         # $3 May be a message or empty
+        # Sets global variable GlobalResponse with the number of the item selected
+        # and GlobalResult with the text of the item selected
+        # Also sets the system return value ($?) with the number of the item selected
         # Read lister.manual for full details
   
     local winwidth startpoint padding itemlen maxlen counter menulist
-    local name items buttontext message buttonRow
+    local name items buttontext message buttonRow item i
    
     winwidth=$(tput cols) 
     padding=""
     maxlen=1
 
-    menulist="$1"
+    if [ -f "$1" ]; then                    # If a file
+        menulist=""
+        items=$(cat ${1} | wc -l)           # Count lines in file
+        for (( i=1; i <= $items; ++i ))     # Load file contents into menulist
+        do
+            item="$(head -n ${i} ${1} | tail -n 1)" # Read item from file
+            menulist="$menulist $item"                      # Add to variable
+        done
+    elif [[ "$1" == "" ]]; then
+        CallMessage "No data to work with"
+        return 1
+    else
+        menulist="$1"    
+    fi
     buttontext="$2"
   
     case $3 in
@@ -247,7 +268,9 @@ function CallMenu  # Simple menu returning outcone via return value
       CallMoveCursor   # Sets numeric $GlobalResponse for up/down or left/right)
       case "$GlobalResponse" in
         0)  # Ok/Return pressed
-            return $selected  # Exit with the menu 1tem number selected
+            GlobalResponse=$selected  # Exit with the menu 1tem number selected
+            GlobalResult="$name"
+            return $selected
             ;;
         1) # Up arrow:
             # First reprint currently selected item in plain
@@ -498,7 +521,6 @@ function CallMoveCursor # Reads keyboard and returns value via GlobalResponse
     do
         tput civis &                          # Hide cursor
         read -rsn1 keypress                   # Capture key press
-        
         case "$keypress" in
           "") # Ok/Return pressed
             tput cnorm
@@ -534,8 +556,9 @@ function CallMoveCursor # Reads keyboard and returns value via GlobalResponse
 # class List
 # {
 function CallLister  # Generates a (potentially multi-page) list from a file.
-{   # The calling function creates input.file* before calling CallLister
-    #       * input.file must have one word per item, one item per line
+{   # Parameter: $1 is the name of the file containing all the items to be listed
+    # The calling function must creates the file* before calling CallLister
+    #       * The file must have one word per item, one item per line
 
         local totalItems lastItem itemLen testLen
         local winWidth displayWidth winCentre winHeight 
@@ -567,7 +590,13 @@ function CallLister  # Generates a (potentially multi-page) list from a file.
         bottomRow=$((winHeight-4))          # Leave space for footer
         itemsInColumn=$((bottomRow-topRow)) # Number of items in each column
 
-        grep -v '^$' input.file > temp.file     # Make a clean working copy
+        # Check that the named file exists, if not, throw a wobbly
+        if [ ! -f "$1" ]; then
+            CallMessage "$1 not found - unable to continue"   # Display error message
+            return 0
+        fi
+        
+        grep -v '^$' ${1} > temp.file       # Make a clean working copy of the file
 
         totalItems=$(cat temp.file | wc -l)
         lastItem="$(tail -n 1 temp.file)"
