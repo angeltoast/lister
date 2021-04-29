@@ -214,7 +214,12 @@ function CallMenu  # Simple menu
     else
         menulist="$1"    
     fi
-    buttontext="$2"
+
+    if [ ! $2 ]; then
+        buttontext="Ok Exit"
+    else
+        buttontext="$2"
+    fi
   
     case $3 in
       "") message=""
@@ -257,11 +262,12 @@ function CallMenu  # Simple menu
       fi
       counter=$((counter+1))
     done
-    # was buttonRow=
+    
     GlobalCursorRow=$((GlobalCursorRow+1))
+    buttonRow=$GlobalCursorRow
     selected=1
     selectedbutton=1
-    CallButtons "$buttontext" "$selectedbutton" $GlobalCursorRow
+    CallButtons "$buttontext" "$selectedbutton" $buttonRow
 
     while :   # The cursor key action will change either the hightlighted menu item
     do        # or one of the buttons.
@@ -322,7 +328,7 @@ function CallMenu  # Simple menu
             else
                 selectedbutton=1
             fi
-            CallButtons "$buttontext" "$selectedbutton" $GlobalCursorRow
+            CallButtons "$buttontext" "$selectedbutton" $buttonRow
             ;;
         *) continue   # Do nothing
       esac
