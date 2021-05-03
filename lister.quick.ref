@@ -1,117 +1,127 @@
-The 'lister' library consists of the following functions, sorted into token 'classes':
+The 'lister' library is a set of user interface functions:
 -----------------------------------------------
 .. Shared class .. General-purpose functions ..
 -----------------------------------------------
-CallNotFound      Displays a warning message to inform user of a problem.
-                  May be called from any error-trapping code.
-                  Optional parameter: 
-                  $1 A short text message.
-                  Returns: No values are set
+DoNotFound      Displays a warning message to inform user of a problem.
+                May be called from any error-trapping code.
+                Optional parameter: 
+                $1 A short text message.
+                Returns: No values are set
 ------------------------------------------------------------------------------
-CallHeading       Clears the active window and prints a heading.
-                  Uses the global variable 'Backtitle' for the heading.
-                  Returns: No values are set.
+DoHeading       Clears the active window and prints a heading.
+                Uses the global variable 'Backtitle' for the heading.
+                Returns: No values are set.
 ------------------------------------------------------------------------------
-CallForm          Prints a centred prompt for user to enter data.
-                  Expects one parameter: 
-                  $1 A short text message to instruct the user.
-                  Sets $GlobalResult with the text entered by the user.
+DoForm          Prints a centred prompt for user to enter data.
+                Expects one parameter: 
+                $1 A short text message to instruct the user.
+                Sets $GlobalChar with the text entered by the user.
 ------------------------------------------------------------------------------
-CallMessage       Prints an informative message with an Ok button.
-                  Optional parameter: 
-                  $1 A short text message
-                  Returns: No values are set
+DoMessage       Prints an informative message with an Ok button.
+                Optional parameter: 
+                $1 A short text message
+                Returns: No values are set
 ------------------------------------------------------------------------------
-CallButtons       Prints a row of buttons
-                  Parameters: 
-                  $1 Button text (eg: "Ok" for one button, or "Yes No" for two; 
-                  $2 Which button to highlight (numeric: 1=left or 2=right);
-                  $3 The row of the window on which the buttons are to be printed:
+DoButtons       Prints a row of buttons
+                Parameters: 
+                $1 Button text (eg: "Ok" for one button, or "Yes No" for two; 
+                $2 Which button to highlight (numeric: 1=left or 2=right);
+                $3 The row of the window on which the buttons are to be printed:
                      (this should normally be within the range 0 to 24);
-                  Sets the return code $? to the number of the button selected.
+                Sets the return code $? to the number of the button selected.
 ----------------------------------------------
 .. Menu class .. Displaying and using menus ..
 ----------------------------------------------
-CallMenu          Generates a simple menu of one-word items, centred on the page.
-                  Parameters:
-                  $1 String of single-word menu items, or the name of a file 
-                  containing those items ...
-                    (max 15 advised, as we don't want to go off the screen, do we?);
-                  $2 Button text, eg: 'Ok Exit';
-                  $3 May be a prompt message or empty.
-                  Sets the return code $? to the number in the menu of the item
-                  selected.
+DoMenu          Generates a simple menu of one-word items, centred on the page.
+                Parameters:
+                $1 String of single-word menu items, or the name of a file 
+                containing those items ...
+                   (max 15 advised, as we don't want to go off the screen, do we?);
+                $2 Button text, eg: 'Ok Exit';
+                $3 May be a prompt message or empty.
+                Sets the return code $? to the number in the menu of the item
+                selected.
 ------------------------------------------------------------------------------
-CallLongMenu      Generates a menu of multi-word items.
-                  Parameters:
-                  $1 The name of a file containing the verbose menu items;
-                  $2 Optional button text, eg: 'Ok Exit'
+DoLongMenu      Generates a menu of multi-word items.
+                Parameters:
+                $1 The name of a file containing the verbose menu items;
+                $2 Optional button text, eg: 'Ok Exit'
                       (if empty will default to 'Ok Exit');
-                  $3 Optional message
+                $3 Optional message
                       (if $3 is required, $2 must be passed, even if null);
-                  Notes:
-                  CallLongMenu requires the named file to exist, or it will abort.
-                  The named file containing the verbose menu items ...
+                Notes:
+                DoLongMenu requires the named file to exist, or it will abort.
+                The named file containing the verbose menu items ...
                       1) Should have one item to a line; 
-                      2) Each line no longer than 50 characters ...
+                      2) Each line no longer than 50 characters, and
+                      3) No more than 20 items ...
                           (we don't want to go off the screen, do we?)
-                  Sets the return code $? to the number in the menu of the item
-                  selected.
+                Sets the return code $? to the number in the menu of the item
+                selected.
 ------------------------------------------------------------------------------
-CallFirstItem     Prints a single item, centred, at the top of the page.
-                  Parameter: 
-                  $1 Text to print;
-                  Sets $GlobalCursoRow for any successive print instructions.
+DoFirstItem     Prints a single item, centred, at the top of the page.
+                Parameter: 
+                $1 Text to print;
+                Sets $GlobalCursorRow for any successive print instructions.
 ------------------------------------------------------------------------------
-CallNextItem      Prints the next item of a menu
-                  Parameters:
-                  $1 startpoint; $2 Item text.
-                  Sets $GlobalCursoRow for any successive print instructions.
+DoNextItem      Prints the next item of a menu
+                Parameters:
+                $1 startpoint; $2 Item text.
+                Sets $GlobalCursorRow for any successive print instructions.
 ------------------------------------------------------------------------------
-CallPrintRev      Prints a menu item in reverse text colour ...
+DoPrintRev      Prints a menu item in reverse text colour ...
                       (matched to the length of the longest item in the menu).
-                  Parameters:
-                  $1 Startpoint (horizontal position of the first character);
-                  $2 Length of the longest menu item (in characters);
-                  $3 Item text
-                  Sets $GlobalCursoRow for any successive print instructions.
+                Parameters:
+                $1 Startpoint (horizontal position of the first character);
+                $2 Length of the longest menu item (in characters);
+                $3 Item text
+                Sets $GlobalCursorRow for any successive print instructions.
 ------------------------------------------------------------------------------
-CallMoveCursor    Respond to user keypress (cursor keys and Enter)...
-                      (used by CallMenu and CallLongMenu).
-                  No parameters.
-                  Sets $GlobalResponse with a number representing the key pressed:
+DoKeypress      Respond to user keypress (cursor keys and Enter)...
+                      (used by DoMenu and DoLongMenu).
+                No parameters.
+                Sets $GlobalInt with a number representing the key pressed:
                       (0=Enter; 1=Up; 2=Left; 3=Down; 4=Right)
 ------------------------------------------------------------
 .. List class .. Display long lists and accept user input ..
 ------------------------------------------------------------
-CallLister        Prepares arrays for use by CallSelectPage and CallPrintPage
-                  to generate a (potentially multi-page) numbered list from a
-                  file.
-                  Parameter: $1 The name of the file containing the list
-                  Requirement:
-                  The calling function must first create the file containing the
-                  items to be listed, before calling CallLister.
-                  The file name must be passed to CallLister as $1;
-                  The file must have one word per item, one item per line.
-                  Returns: No values are set by CallLister (return values are set
-                  by CallPrintPage)
+DoLister        Prepares arrays for use by DoSelectPage and DoPrintPage
+                to generate a (potentially multi-page) numbered list from a
+                file.
+                Parameter: $1 The name of the file containing the list
+                Requirement:
+                The calling function must first create the file containing the
+                items to be listed, before calling DoLister.
+                The file name must be passed to DoLister as $1;
+                The file must have one word per item, one item per line.
+                Returns: No values are set by DoLister itself (return values
+                are set by DoPrintPage)
 ------------------------------------------------------------------------------
-CallSelectPage    Used by CallLister to manage page handling.
-                  The arrays used here are declared and initialised in
-                  CallLister as global in scope.
-                  Parameters (all set by CallLister):
-                  $1 = winHeight; $2 = winCentre; $3 lastPage;
-                  Returns: No values are set by CallSelectPage (return values are
-                  set by CallPrintPage)
+DoSelectPage    Used by DoLister to manage page handling.
+                The arrays used here are declared and initialised in
+                DoLister as global in scope.
+                Parameters (all set by DoLister):
+                $1 = winHeight; $2 = winCentre; $3 lastPage;
+                Returns: No values are set by DoSelectPage (return values are
+                set by DoPrintPage)
 ------------------------------------------------------------------------------
-CallPrintPage     Displays the selected page, then waits for the user to enter
-                  a number. The items are printed in columns, to show as many
-                  as possible.
-                  Parameters (all set by CallSelectPage):
-                  $1 winHeight; $2 winCentre; $3 instructions;
-                  $4 pageNumber; $5 lastItem
-                  The arrays used here are declared and initialised in
-                  CallLister as global in scope
-                  Sets $GlobalResponse to the user input (item number)
-                  and $GlobalResult to the detail of the menu item.
+DoPrintPage     Displays the selected page, then waits for the user to enter
+                a number. The items are printed in columns, to show as many
+                as possible.
+                Parameters (all set by DoSelectPage):
+                $1 winHeight; $2 winCentre; $3 instructions;
+                $4 pageNumber; $5 lastItem
+                The arrays used here are declared and initialised in
+                DoLister as global in scope
+                Sets $GlobalInt to the user input (item number)
+                and $GlobalChar to the detail of the menu item.
 ------------------------------------------------------------------------------
+DoMega          Generates a (potentially multi-page) numbered list from a file
+                of crude data prepared by the calling program.
+                Parameters:
+                $1 Name of the file containing all the items;
+                $2 Search term; $3 ignore (y/n)
+------------------------------------------------------------------------------
+DoMegaPage      Does the actual printing bit for DoMega.
+                Parameters:
+                $1 pageNumber; $2 pages; $3 display; $4 items; $5 counter
