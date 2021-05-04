@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Developed by Elizabeth Mills
-# Revision 2105031 3rd May 2021
+# Revision 21.05.04.1 May 2021
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,29 +23,31 @@
 # parameters between them.
 # See lister.manual for guidance on the use of these functions
 
-# --------------------  ------------------------
-#   Function    Line	Purpose
-# --------------------  ------------------------
-# .. Shared ..    General-purpose functions
-# DoNotFound     58   General warning message
-# DoHeading      63   Prepare a new window with heading
-# DoForm         86   Centred prompt for user-entry
-# DoMessage     104   Prints a message with Ok button
-# DoButtons     135   Prints one or two buttons
-# .. Menus ..      Displaying and using menus
-# DoMenu        187   Generates a simple menu of one-word items
-# DoLongMenu    344   Generates a menu of multi-word items
-# DoFirstItem   490   Prints a single, centred item
-# DoNextItem    511   Prints successive aligned items
-# DoPrintRev    517   Reverses text colour at appointed position
-# DoKeypress    532   Respond to keypress
-# .. Lists ..      Display long lists and accept user input
-# DoLister      570   Generates a numbered list of one-word items in columns
-# DoSelectPage  702   Used by DoLister to manage page handling
-# DoPrintPage   768   Used by DoLister to display selected page
-# DoMega        863   Pages full of extra long text, trimmed to fit
-# DoMegaPage    913   Does the printing for DoMega
-# --------------------  -----------------------------------------
+# -------------------------------------------------------------
+#       Shared .. General-purpose functions
+# -------------------------------------------------------------
+# DoHeading      60   Prepare a new window with heading
+# DoForm         83   Centred prompt for user-entry
+# DoMessage     101   Prints a message with Ok button
+# DoButtons     106   Prints one or two buttons
+# -------------------------------------------------------------
+#       Menus .. Displaying and using menus
+# -------------------------------------------------------------
+# DoMenu        158   Generates a simple menu of one-word items
+# DoLongMenu    315   Generates a menu of multi-word items
+# DoFirstItem   461   Prints a single, centred item
+# DoNextItem    482   Prints successive aligned items
+# DoPrintRev    488   Reverses text colour at appointed position
+# DoKeypress    503   Respond to keypress
+# --------------------------------------------------------------
+#       Lists .. Display long lists and accept user input
+# --------------------------------------------------------------
+# DoLister      541   Generates a numbered list of one-word items in columns
+# DoSelectPage  673   Used by DoLister to manage page handling
+# DoPrintPage   739   Used by DoLister to display selected page
+# DoMega        834   Pages full of extra long text, trimmed to fit
+# DoMegaPage    884   Does the printing for DoMega
+# ---------------------------------------------------------------
 
 # Global variables
 GlobalInt=0                # Output (menu item number)
@@ -55,31 +57,26 @@ GlobalCursorRow=0               # For alignment across functions
 # ---------------------------------------------------------------
 # Shared
 #----------------------------------------------------------------
-function DoNotFound   # Errror reporting
-{   # $1 and $2 optional lines of message text
-    xterm -T " Error" -geometry 90x10+300+250 -fa monospace -fs 10 -e "echo '$1' && echo '$2' && read -p 'Please press [Enter] ...'"
-}
-
 function DoHeading    # Always use this function to prepare the screen
 { 
     clear
     
     local winwidth limit text textlength startpoint
-    winwidth=$(tput cols)                     # Recheck window width  
-    text="$Backtitle"                         # Use Global variable
-    textlength=$(echo $text | wc -c)          # Count characters
+    winwidth=$(tput cols)                           # Recheck window width  
+    text="$Backtitle"                               # Use Global variable
+    textlength=$(echo $text | wc -c)                # Count characters
       
-    if [ $textlength -ge $winwidth ]; then    # If text too long for window
-        limit=$((winwidth-2))                   # Limit to 2 characters lt winwidth
-        text="${text:0:$limit}"                 # Limit length of printed text
-        textlength=$(echo $text | wc -c)        # Recount
+    if [ $textlength -ge $winwidth ]; then          # If text too long for window
+        limit=$((winwidth-2))                       # Limit to 2 characters lt winwidth
+        text="${text:0:$limit}"                     # Limit length of printed text
+        textlength=$(echo $text | wc -c)            # Recount
     fi
     
-    startpoint=$(( (winwidth - textlength) / 2 )) # Horizontal startpoint
-    tput cup 0 $startpoint                     # Move cursor to startpoint
-    tput bold                                 # Display will be bold
+    startpoint=$(( (winwidth - textlength) / 2 ))   # Horizontal startpoint
+    tput cup 0 $startpoint                          # Move cursor to startpoint
+    tput bold                                       # Display will be bold
     printf "%-s\\n" "$text"
-    tput sgr0                                 # Reset colour inversion
+    tput sgr0                                       # Reset colour inversion
     GlobalCursorRow=$((GlobalCursorRow+1))
 } # End DoHeading
 
@@ -102,34 +99,8 @@ function DoForm    # Centred prompt for user-entry
 } # End DoForm
 
 function DoMessage    # Display a message with an 'Ok' button to close
-{                     # $1 = message text
-    local winwidth text textlength textRow buttonRow startpoint
-       
-    if [ ! "$1" ]; then text="No message passed"; else text="$1"; fi
-    winwidth=$(tput cols)                # Recheck window width
-    textlength=${#text}                  # Get length of message
-       
-    if [ ${textlength} -lt ${winwidth} ]; then
-        startpoint=$(( (winwidth - textlength) / 2 ))
-    elif [ ${textlength} -gt ${winwidth} ]; then
-        startpoint=0
-    else
-        startpoint=$(( (winwidth - 10) / 2 ))
-    fi
-  
-    DoHeading                                  # Prepare screen
-
-    textRow=$(tput lines)
-    textRow=$((textRow / 3))
-    tput cup $textRow $startpoint                # Move cursor to startpoint
-    printf "%-s\\n" "$text"
-    buttonRow=$((textRow + 2))
-
-    DoButtons "Ok" 1 $buttonRow                # Print ok button
-
-    tput civis &                                 # Hide the cursor
-    read -p ""
-    tput cnorm                                   # Ensure normal cursor
+{                     # $1 and $2 optional lines of message text
+    xterm -T " Error" -geometry 90x10+300+250 -fa monospace -fs 10 -e "echo '$1' && echo '$2' && read -p 'Please press [Enter] ...'"
 } # End DoMessage
 
 function DoButtons
@@ -192,16 +163,16 @@ function DoMenu  # Simple menu
         # and GlobalChar with the text of the item selected
         # Also sets the system return value ($?) with the number of the item selected
   
-    local winwidth startpoint padding itemlen maxlen counter menulist
+    local winwidth startpoint padding itemlen longest counter menulist
     local name items buttontext message buttonRow item i
     winwidth=$(tput cols) 
     padding=""
-    maxlen=1
+    longest=1
 
     if [ -f "$1" ]; then                    # If a file
         menulist=""
         items=$(cat ${1} | wc -l)           # Count lines in file
-        items=$((items+1))                # wc counts newlines, so add 1
+        items=$((items+1))                  # wc counts newlines, so add 1
         for (( i=1; i <= $items; ++i ))     # Load file contents into menulist
         do
             item="$(head -n ${i} ${1} | tail -n 1)" # Read item from file
@@ -221,7 +192,7 @@ function DoMenu  # Simple menu
     fi
   
     case $3 in
-      "") message=""
+      "") message=" "
       ;;
       *) message="$3"
     esac
@@ -237,17 +208,17 @@ function DoMenu  # Simple menu
     do
       counter=$((counter+1))
       if [ $counter -eq 1 ]; then
-        maxlen=${#i}                    # Save length
+        longest=${#i}                    # Save length
       else
         itemlen=${#i}
-        if [ $itemlen -gt $maxlen ]; then
-          maxlen=$itemlen
+        if [ $itemlen -gt $longest ]; then
+          longest=$itemlen
         fi
       fi
     done
 
     items=$counter
-    startpoint=$(( (winwidth - maxlen) /2 ))  # Position of first character
+    startpoint=$(( (winwidth - longest) /2 ))  # Position of first character
     
     # Now run through the list again to print each item
     counter=1
@@ -270,9 +241,10 @@ function DoMenu  # Simple menu
     selectedbutton=1
     DoButtons "$buttontext" "$selectedbutton" $buttonRow
 
-    while true   # The cursor key action will change either the hightlighted menu item
-    do        # or one of the buttons.
-        DoKeypress   # Sets numeric $GlobalInt for up/down or left/right)
+    while true          # The cursor key action will change either the
+    do                  # hightlighted menu item or one of the buttons
+    
+        DoKeypress  # Sets numeric $GlobalInt for up/down or left/right)
         case "$GlobalInt" in
         0)  # Ok/Return pressed
             if [ $selectedbutton -eq 1 ]; then 
@@ -284,48 +256,47 @@ function DoMenu  # Simple menu
             fi
             return $selected
         ;;
-        1) # Up arrow:
+        1)  # Up arrow:
             # First reprint currently selected item in plain
-            GlobalCursorRow=$((selected+2))   # Set to new row (menu starts at row 3)
-      
+            GlobalCursorRow=$((selected+3))   # Set to new row (menu starts at row 3)
             # Use string cutting facilities   
             name="$(echo $menulist | cut -d' ' -f$selected)"
-            length=$(echo "$name" | wc -c)          # Get length for padding
-            spaces=$((longest-length))              # Calculate spaces to pad it out
-            padding="$(printf '%*s' "$spaces")"     # Create spaces to make length
-                                                      # To hide reversed padding
-            tput cup "$GlobalCursorRow" "$startpoint"     # Move cursor
-            printf "%-s\\v" "$name $padding" # Print the item
+            length=$(echo "$name" | wc -c)              # Get length for padding
+            spaces=$((longest-length))                  # Calculate spaces to pad it out
+            padding="$(printf '%*s' "$spaces")"         # Create spaces to make length
+                                                        # To hide reversed padding
+            tput cup "$GlobalCursorRow" "$startpoint"   # Move cursor
+            printf "%-s\\v" "$name $padding"            # Print the item
             # Next move the selected item
-            if [ $selected -eq 1 ]; then            # If at top
-                selected=$items                       # Move pointer to bottom
+            if [ $selected -eq 1 ]; then                # If at top
+                selected=$items                         # Move pointer to bottom
             else
-                selected=$(( selected -1 ))           # Else move up one
+                selected=$(( selected -1 ))             # Else move up one
             fi
             # Print newly selected item in reverse colour (padded)
             name="$(echo $menulist | cut -d' ' -f$selected)"
-            GlobalCursorRow=$((selected+2))
+            GlobalCursorRow=$((selected+3))
             DoPrintRev "$startpoint" "$longest" "$name"
         ;;
         3) # Down arrow
             # First reprint currently selected item in plain
-            GlobalCursorRow=$((selected+2))   # Set to new row (menu starts at row 3)
+            GlobalCursorRow=$((selected+3))   # Set to new row (menu starts at row 4)
             name="$(echo $menulist | cut -d' ' -f$selected)"
-            length=$(echo "$name" | wc -c)   # Get length for padding
-            spaces=$((longest-length))              # Calculate spaces to pad it out
-            padding="$(printf '%*s' "$spaces")"     # Create spaces to make length
-                                                      # To hide reversed padding
-            tput cup "$GlobalCursorRow" "$startpoint"     # Move cursor
-            printf "%-s\\v" "$name $padding" # Print the item     
+            length=$(echo "$name" | wc -c)              # Get length for padding
+            spaces=$((longest-length))                  # Calculate spaces to pad it out
+            padding="$(printf '%*s' "$spaces")"         # Create spaces to make length
+                                                        # To hide reversed padding
+            tput cup "$GlobalCursorRow" "$startpoint"   # Move cursor
+            printf "%-s\\v" "$name $padding"            # Print the item in plain  
             # Next move the selected item
-            if [ $selected -eq $items ]; then       # If at bottom
-                selected=1                            # Move to top
+            if [ $selected -eq $items ]; then           # If at bottom
+                selected=1                              # Move to top
             else
-                selected=$((selected+1))              # Else move down one
+                selected=$((selected+1))                # Else move down one
             fi
             # Print newly selected item in reverse colour (padded)
             name="$(echo $menulist | cut -d' ' -f$selected)"
-            GlobalCursorRow=$((selected+2))                # Set to new row
+            GlobalCursorRow=$((selected+3))             # Set to new row
             DoPrintRev "$startpoint" "$longest" "$name"
         ;;
         4|2) # Right or left - button action, not a menu action
@@ -358,7 +329,7 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
     if [ -f "$1" ]; then
         filename="$1"
     else
-        DoNotFound "$1 not found - unable to continue"   # Display error message
+        DoMessage "$1 not found - unable to continue"   # Display error message
         return 0
     fi
       
@@ -869,7 +840,7 @@ function DoMega   # Cleans up crude data from input file and prepares mega-work.
     local winHeight items i counter line display startpoint saveCursorRow term1
 
     if [ ! -f "$1" ]; then
-        DoNotFound "The file $1 is needed but was not found."
+        DoMessage "The file $1 is needed but was not found."
         return 1
     fi
     

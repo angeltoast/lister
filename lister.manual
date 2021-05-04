@@ -1,57 +1,83 @@
 Using the lister functions - Elizabeth Mills
-Revised - Elizabeth Mills - 28th April 2021
--------------------------------------------
 
-The scripts described herein are shared in the hope that they will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details. A copy of the GNU General Public License is available from the lister page at:
+Revision 21.05.04.1 May 2021
 
-   https://github.com/angeltoast/
+The scripts described herein are shared in the hope that they will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details. A copy of the GNU
+General Public License is available from the lister page at: https://github.com/angeltoast
 
-   ... or write to:
-
-   The Free Software Foundation, Inc.
-   51 Franklin Street, Fifth Floor
-   Boston, MA 02110-1301 USA
-   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ... or write to:     The Free Software Foundation, Inc.
+                        51 Franklin Street, Fifth Floor
+                        Boston, MA 02110-1301 USA
 
 Introduction
-The philosophy behind lister.sh was conceived as part of the independent Feliz installer for the Arch Linux operating system. At that time, the module was called Listgen', but it has changed completely since those days, and all the functions have been renamed, so a name change seems appropriate. Feliz is no longer maintained, and lister.sh is now an independent project. It is written entirely in bash, so you can edit it to suit your purposes. 
+------------
+The philosophy behind lister.sh was conceived as part of the independent Feliz install
+script for the Arch Linux operating system. There was a need for a 'friendlier' display of
+information and getting user input, but it had to be light and self-contained, because of
+the constraints of running the script in the Arch Linux live session. At that time, the
+module was called Listgen', but it has changed completely since those days, and all the
+functions have been rewritten and renamed, so a name change seems appropriate. Feliz is no
+longer maintained, and lister.sh is now an independent project. It is written entirely in
+bash, and is open-source, so you can edit it to suit your purposes. 
 
-In this guide, aimed at intermediate scripters, we will look at how the functions in the lister.sh module can be incorporated to help you to improve the display of information while running your own scripts.
+In this guide, aimed at intermediate scripters, we will look at how the functions in the
+lister.sh module can be incorporated to help you to improve the display of information
+while running your own scripts.
 
-lister.sh is still in flux at the moment, so it is advised that you check this manual and the lister.quick.ref file before using.
+The lister module is self-contained and application-independent. It initialises all its
+own variables, and contains all the functions it needs; any of the functions may be called
+from any scripts. You only have to put a copy of lister.sh in the same location as your
+scripts, and source it, to be able to add all the features of lister to your scripts.
 
-The lister module is self-contained and application-independent. It initialises all its own variables, and contains all the functions it needs; any of the functions may be called independently from any scripts. You only have to put a copy of the lister.sh module in the same location as your scripts, and source it, to be able to add all the features of lister to your scripts.
+Some of the functions share the outcome of their processes via the global variables
+GlobalChar and GlobalInt. One other global variable is used - GlobalCursorRow, which
+tracks vertical alignment. All other variables are local to their functions, and values
+must be passed as parameters between them.
 
-About The lister.sh functions
-This project is designed to help with creating intuitive cli interfaces without using Dialog, Whiptail, or any other external package, especially for situations wher other windowing systems are not available, or where resources are tight. Instead, it uses the tput library to determine the terminal dimensions and to display lists and text centrally according to content.
+About the lister.sh functions
+-----------------------------
+This project is designed to help with creating intuitive cli interfaces without using
+Dialog, Whiptail, or any other external package, especially for situations where other
+'box' systems are not available, or where resources are tight. Instead, it uses the
+tput library to determine the terminal dimensions and to display lists and text centrally
+according to content. Unlike the others, Lister does not draw boxes, and has no colours.
 
-The functions are named distinctively, so that they stand out in your code:
-DoForm        A form for user input;
-DoMessage     A message (for information or error-reporting) with an 'Ok' button;
-DoMenu:       Generates a menu of one-word items;
-DoLongMenu:   Generates a menu of multi-word items;
-DoLister:     Prints one or more pages of numbered items in columns;
-DoMega        Prints one or more pages of numbered items that are as wide as the window;
-The following functions  in lister.sh are used by the system:
-DoHeading:    Prepares a blank window with a heading;
-DoFirstItem:  Prints one line of text, centralised on the page;
-DoNextItem:   Prints successive items, aligned to the first;
-DoButtons:    Prints a button or row of buttons (currently limited to two);
-DoPrintRev:   Reverses (ie: highlights) text colour for selected menu item and/or button;
-DoActiveMenu: Controls the selection and highlighting of menu items;
-DoSelectPage: Selects an appropriate page of data according to user input;
-DoPrintPage:  Displays one page of a list, fitting as many columns as possible in the window;
-DoMegaPage    Prints the pages prepared by DoMega.
--------------------------------------------------------------
-A simple example, using the 'DoMessage' function:
-A call to DoMessage passes only one parameter:
-$1 The text to be displayed; 
+The functions are named distinctively, so that they stand out in your code. These are the
+ones that you will likely call directly:
+    DoForm        A form for user input;
+    DoMessage     A message (for information or error-reporting) with an 'Ok' button;
+    DoMenu        Generates a menu of one-word items;
+    DoLongMenu    Generates a menu of multi-word items;
+    DoLister      Prints one or more pages of numbered items in columns;
+    DoMega        Prints one or more pages of numbered items that are as wide as the window.
 
-Use it like this:
-DoMessage "The file has been updated."
--------------------------------------------------------------
+The following functions  in lister.sh are used by the other functions:
+    DoHeading     Prepares a blank window with a heading;
+    DoFirstItem   Prints one line of text, centralised on the page;
+    DoNextItem    Prints successive items, aligned to the first;
+    DoButtons     Prints a button or row of buttons (currently limited to two);
+    DoPrintRev    Reverses (ie: highlights) text colour for selected menu item and/or button;
+    DoActiveMenu  Controls the selection and highlighting of menu items;
+    DoSelectPage  Selects an appropriate page of data according to user input;
+    DoPrintPage   Displays one page of a list, fitting as many columns as possible in the window;
+    DoMegaPage    Prints the pages prepared by DoMega.
+-----------------------------------------------------------------------------------------
+A simple example, using the 'DoMessage' function
+------------------------------------------------
+A call to DoMessage passes only one parameter:  $1 The text to be displayed; 
+
+Use it like this:   DoMessage "The file has been updated."
+
+DoMessage opens a terminal (xterm) with the message, and waits for the user to press [Enter]
+-----------------------------------------------------------------------------------------
 DoMenu
-The first and simplest listing function, DoMenu, is for use in shell scripts to generate an interactive menu. It prints the list of options provided, in the form of a scrollable menu, with a pair of 'buttons' to confirm or exit.
+------
+The first and simplest menu function. DoMenu is for use in shell scripts to generate an
+interactive menu. It prints the list of options provided, in the form of a scrollable menu,
+with a pair of 'buttons' to confirm or exit.
+
 Parameters:
 $1 String of single-word menu items, or the name of a file containing those items ...
       (max 15 advised, as we don't want to go off the screen, do we?);
@@ -60,8 +86,7 @@ $2 Button text, eg: 'Ok Exit' or just 'Ok' (these must be single-word options).
    In this way you can make sure that your users pick one of the menu items offered;
 $3 Optional prompt message, or can be empty.
 
-Example call:
-DoMenu "Reboot Shutdown" "Ok Exit"
+Example call:   DoMenu "Sing Dance Act" "Ok Exit"
 
 The first (string array) argument may be passed in one of three ways:
 1) It may be specified in the calling line (as above):
@@ -83,13 +108,22 @@ The first (string array) argument may be passed in one of three ways:
             done
             ...
             DoMenu "${passzones}" "Select Exit"
+            
 DoMenu sets two global variables for use by the calling function ...
 1) $GlobalInt - the item number selected by the user, and
 2) $GlobalChar - the label (from the variable array) of the item selected.
-This means that you can respond to the user input by using (for example) a 'case - esac' statement or an 'if - else - fi' statement.
-----------------------------------------------------------------
+This means that you can respond to the user input by using (for example) a 'case - esac'
+statement or an 'if - else - fi' statement.
+-----------------------------------------------------------------------------------------
 DoLongMenu
-This is designed for displaying longer descriptions in a menu. It receives the text of the long items via a file. When an item is selected, lister2 finds that item in the file, and saves it as the global variable $GlobalChar which may then be used by the calling function if desired. Although complex to set up, it adds greater functionality and user-friendliness for menus. The file must exist, must have each item on its own line in the file (no more than 20 items), and the file name must be passed as the first parameter, before it can be used.
+----------
+This is designed for displaying longer descriptions in a menu format. It receives the text
+of the long items via a file. When an item is selected by the user, lister2 finds that
+item in the file, and saves it as the global variable $GlobalChar which may then be used
+by the calling function if desired. Although complex to set up, it adds greater
+functionality and user-friendliness for menus. The file must exist, must have each item on
+its own line in the file (no more than 20 items), and the file name must be passed as the
+first parameter, before it can be used.
 
 Parameters:
 $1 The name of the file containing the verbose menu items;
@@ -105,14 +139,22 @@ $3 Optional message
         3) No more than 20 items
               (we don't want to go off the screen, do we?)
 
-Calling DoLongMenu may take the form:
-    DoLongMenu "file.name" "Ok Exit" ""
+Calling DoLongMenu may take the form:       DoLongMenu "file.name" "Ok Exit" ""
 DoLongMenu returns the same global variables as DoMenu.
-----------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 DoLister
-DoLister differs from the other two in that, instead of a cursor-driven menu, it generates a numbered list from which the user can choose by entering the number displayed next to the item. This is provided for situations where a large number of options is to be offered, and a menu would scroll off the screen.
-Because DoLister must redraw the screen for each pageful of data to be displayed, it must provide all the text the user needs for advice and prompting. In order to simplify the calling code, DoLister uses a default set of instructions to the user.
-The calling function must generate a file containing all the items to be displayed. The items in the file must be only one word each, and must be one to a line.
+-------
+DoLister differs from the other two in that, instead of a cursor-driven menu, it generates
+a numbered list from which the user can choose by entering the number displayed next to
+the item. This is provided for situations where a large number of options is to be offered,
+and a menu would scroll off the screen. Because DoLister must redraw the screen for each
+pageful of data to be displayed, it must provide all the text the user needs for advice
+and prompting. In order to simplify the calling code, DoLister uses a default set of
+instructions to the user.
+
+The calling function must generate a file containing all the items to be displayed. The
+items in the file must be only one word each, and must be one to a line.
+
 The file may be generated in any way that produces the list you want to use:
 1) It may be passed directly:
     eg: printf "%-s\n" "item1" "item2" "item3" > input.file
@@ -128,10 +170,21 @@ The calling function sends only one parameter:
       $1 The name of the file containing the items.
       So it is, simply: DoLister "file.name"
     
-The items are printed on the screen in columns, neatly centred, as many as will comfortably fit the window, with a number next to each item.
-At the top of the screen, the message "Page x of x" is displayed. At the bottom, beneath the pageful of data, the user is guided to enter either the number corresponding to the item they wish to select, a 'paging' character ('<' or '>', to go back to a previous page or advance to the next), or to leave the entry box empty if there is nothing they want to select ("or ' ' to exit"). The text advising the user of the paging characters available is intelligently displayed - only valid options are suggested.
-Finally, there is a line of prompt text, with the cursor flashing, waiting for user entry. 
-DoLister sets the same global output variables as DoMenu and DoLongMenu
+The items are printed on the screen in columns, neatly centred, as many as will comfortably
+fit the window, with a number next to each item. At the top of the screen, the message
+"Page x of x" is displayed. At the bottom, beneath the pageful of data, the user is guided
+to enter either the number corresponding to the item they wish to select, a 'paging'
+character (either 'p' for 'previous' or 'n' for 'next' - to go back to a previous page or
+advance to the next), or to leave the entry box empty if there is nothing they want to
+select. The text advising the user of the paging characters available is intelligently
+displayed - only valid options are suggested. Finally, there is a line of prompt text,
+with the cursor flashing, waiting for user entry.
 
-DoMega is for displaying extra long lines of text from a data file. It trims them to fit the page, and DoMegaPage prints a pageful so you can choose one. DoMega takes three parameters:
-    $1 Name of the file containing all the items; $2 Message text 1; $3 Message text 2
+DoLister sets the same global output variables as DoMenu and DoLongMenu
+-----------------------------------------------------------------------------------------
+Recently added, DoMega is for displaying extra long lines of text from a data file. It
+trims them to fit the page, and DoMegaPage prints a pageful so you can choose one. DoMega
+takes three parameters:
+    $1 Name of the file containing all the items; $2 Message; $3 Message
+
+    
