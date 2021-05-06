@@ -26,33 +26,36 @@
 # -------------------------------------------------------------
 #       Shared .. General-purpose functions
 # -------------------------------------------------------------
-# DoHeading      60   Prepare a new window with heading
-# DoForm         83   Centred prompt for user-entry
-# DoMessage     101   Prints a message with Ok button
-# DoButtons     106   Prints one or two buttons
+# DoHeading        60  Prepare a new window with heading
+# DoForm           83  Centred prompt for user-entry
+# DoMessage       101  Prints a message with Ok button
+# DoButtons       106  Prints one or two buttons
+# DoSwitchButtons 156  Alternate buttons
+# DoEnum          167  Enumerate a string
+# DoYesNo         202  Yes, a yes/no function
 # -------------------------------------------------------------
 #       Menus .. Displaying and using menus
 # -------------------------------------------------------------
-# DoMenu        158   Generates a simple menu of one-word items
-# DoLongMenu    315   Generates a menu of multi-word items
-# DoFirstItem   461   Prints a single, centred item
-# DoNextItem    482   Prints successive aligned items
-# DoPrintRev    488   Reverses text colour at appointed position
-# DoKeypress    503   Respond to keypress
+# DoMenu          172   Generates a simple menu of one-word items
+# DoLongMenu      326   Generates a menu of multi-word items
+# DoFirstItem     468   Prints a single, centred item
+# DoNextItem      489   Prints successive aligned items
+# DoPrintRev      495   Reverses text colour at appointed position
+# DoKeypress      510   Respond to keypress
 # --------------------------------------------------------------
 #       Lists .. Display long lists and accept user input
 # --------------------------------------------------------------
-# DoLister      541   Generates a numbered list of one-word items in columns
-# DoSelectPage  673   Used by DoLister to manage page handling
-# DoPrintPage   739   Used by DoLister to display selected page
-# DoMega        834   Pages full of extra long text, trimmed to fit
-# DoMegaPage    884   Does the printing for DoMega
+# DoLister        548   Generates a numbered list of one-word items in columns
+# DoSelectPage    680   Used by DoLister to manage page handling
+# DoPrintPage     746   Used by DoLister to display selected page
+# DoMega          841   Pages full of extra long text, trimmed to fit
+# DoMegaPage      891   Does the printing for DoMega
 # ---------------------------------------------------------------
 
 # Global variables
 GlobalInt=0                # Output (menu item number)
-GlobalChar=""                 # Output (menu item text)
-GlobalCursorRow=0               # For alignment across functions
+GlobalChar=""              # Output (menu item text)
+GlobalCursorRow=0          # For alignment across functions
 
 # ---------------------------------------------------------------
 # Shared
@@ -151,13 +154,82 @@ function DoButtons
     tput sgr0 	                                # Reset colour
     return $selected
 } # End DoButtons
+
+function DoSwitchButtons       # $1 = Selected button
+{
+    local selected
+    if [ $1 -eq 1 ]; then  # Switch buttons
+        selected=2
+    else
+        selected=1
+    fi
+    return $selected
+} # End DoSwitchButtons
+
+function DoEnum # Enumerate a word from a string variable
+{               # $1 Either a word to enumerate, or a number to look up
+                # $2 String of space-separated one-word items
+                # Returns item number as $? and item detail as $GlobalChar
+
+    local items item counter x
+    x=0
+    items=$(echo "$2" | wc -w)
+
+    # Test if $1 numeric or not
+    case $1 in
+    *[0-9]*)   x=$1
+        GlobalChar=$(echo "$2" | cut -d' ' -f$x)  # Find the word
+        return $1
+    ;;
+    *)  counter=1                                 # Find the number
+        for item in $2  # Count through list
+        do
+            if [ $item == $1 ]; then
+                GlobalChar="$item"
+                break
+            fi
+            counter=$((counter+1))
+            if [ $counter -gt $items ]; then        # In case $2 not found in $1
+                GlobalChar=""
+                counter=0
+                break
+            fi
+        done
+        return $counter
+    esac
+} # End DoEnum
+
+function DoYesNo      # A yes/no function
+{                   # $1 Text for prompt, eg: "Reload the csv?"
+    local selected
+    
+    DoHeading
+    GlobalCursorRow=$((GlobalCursorRow+2))
+    DoFirstItem "$1"
+    GlobalCursorRow=$((GlobalCursorRow+2))
+
+    selected=1
+    while true
+    do
+        DoButtons "Yes No" $selected $GlobalCursorRow
+        DoKeypress
+        if [ $GlobalInt -eq 0 ]; then   # User pressed [Enter]
+            break
+        fi
+        DoSwitchButtons $selected
+        selected=$?
+    done
+    GlobalChar="$(echo 'Yes No' | cut -d' ' -f ${selected})"
+    return $selected
+} # End Permission
+
 # End Shared
 # -------------------------------------------------------------
 # Menus
 #--------------------------------------------------------------
 function DoMenu  # Simple menu
 {       # $1 String of single-word menu items (or the name of a file)
-        # $2 button text eg: 'Ok Exit'
+        # $2 button text eg: 'Select Done' (if empty will default to 'Ok Exit')
         # $3 May be a headline or empty
         # Sets global variable GlobalInt with the number of the item selected
         # and GlobalChar with the text of the item selected
@@ -239,7 +311,7 @@ function DoMenu  # Simple menu
     buttonRow=$((GlobalCursorRow+1))
     selected=1
     selectedbutton=1
-    DoButtons "$buttontext" "$selectedbutton" $buttonRow
+    DoButtons "$buttontext" $selectedbutton $buttonRow
 
     while true          # The cursor key action will change either the
     do                  # hightlighted menu item or one of the buttons
@@ -299,13 +371,10 @@ function DoMenu  # Simple menu
             GlobalCursorRow=$((selected+3))             # Set to new row
             DoPrintRev "$startpoint" "$longest" "$name"
         ;;
-        4|2) # Right or left - button action, not a menu action
-            if [ $selectedbutton -eq 1 ]; then  # Switch buttons
-                selectedbutton=2
-            else
-                selectedbutton=1
-            fi
-            DoButtons "$buttontext" "$selectedbutton" $buttonRow
+        4|2) # Right or left - button action, not a menu action     
+            DoSwitchButtons $selectedbutton
+            selectedbutton=$?
+            DoButtons "$buttontext" $selectedbutton $buttonRow
         ;;
         *) continue   # Do nothing
         esac
@@ -317,7 +386,7 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
     # $2 Optional button text eg: 'Ok Exit' (if empty will default to 'Ok Exit')
     # $3 Optional headline (if headline is required, $2 must be passed, even if null)
     # DoLongMenu requires the named file to exist.
-    # longmenu.file must contain the verbose menu items (max length 50 characters),
+    # The named file must contain the verbose menu items (max length 50 characters),
     # one item to a line, no more than 20 items
 
     local filename winwidth message                               # Basics
@@ -387,7 +456,8 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
     buttonrow=$((GlobalCursorRow))
     selected=1
     selectedbutton=1
-    DoButtons "$buttontext" "$selectedbutton" $buttonrow
+   
+    DoButtons "$buttontext" $selectedbutton $buttonrow
     
     while true          # The cursor key action will change either the hightlighted
     do                  # menu item or one of the buttons.
@@ -444,14 +514,10 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
             GlobalCursorRow=$((selected+2))                # Set to new row
             DoPrintRev "$startpoint" "$longest" "$description"
         ;;
-        4|2) # Right or left - button action, not a menu action
-            
-            if [ $selectedbutton -eq 1 ]; then  # Switch buttons
-              selectedbutton=2
-            else
-              selectedbutton=1
-            fi
-            DoButtons "$buttontext" "$selectedbutton" $buttonrow
+        4|2) # Right or left - button action, not a menu action     
+            DoSwitchButtons $selectedbutton
+            selectedbutton=$?
+            DoButtons "$buttontext" $selectedbutton $buttonrow
         ;;
         *) continue   # Do nothing
         esac

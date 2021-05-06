@@ -1,6 +1,6 @@
 The 'lister' library is a set of user interface functions:
 -----------------------------------------------
-.. Shared class .. General-purpose functions ..
+.. Shared .. General-purpose functions ..
 -----------------------------------------------
 DoNotFound      Displays a warning message to inform user of a problem.
                 May be called from any error-trapping code.
@@ -29,6 +29,19 @@ DoButtons       Prints a row of buttons
                 $3 The row of the window on which the buttons are to be printed:
                      (this should normally be within the range 0 to 24);
                 Sets the return code $? to the number of the button selected.
+------------------------------------------------------------------------------
+DoEnum          Enumerates words in a string
+                Parameters:
+                $1 Either a word or a number to be looked up in $2;
+                $2 A string of words.
+                Sets the return code $? to the number of the word, and ...
+                global variable $GlobalChar to the word at that number.
+------------------------------------------------------------------------------
+DoYesNo         A really simple yes/no prompt
+                Parameter:
+                $1 A short line of text to which the answer can be yes or no.
+                Sets the return code $? to 1 (yes) or 2 (no) and ...
+                global variable $GlobalChar to 'Yes' or 'No'.
 ----------------------------------------------
 .. Menu class .. Displaying and using menus ..
 ----------------------------------------------
