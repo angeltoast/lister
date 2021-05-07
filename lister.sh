@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Developed by Elizabeth Mills
-# Revision 21.05.04.1 May 2021
+# Revision 210507.1
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ function DoHeading    # Always use this function to prepare the screen
     tput bold                                       # Display will be bold
     printf "%-s\\n" "$text"
     tput sgr0                                       # Reset colour inversion
-    GlobalCursorRow=$((GlobalCursorRow+1))
+    GlobalCursorRow=1
 } # End DoHeading
 
 function DoForm    # Centred prompt for user-entry
@@ -245,7 +245,7 @@ function DoMenu  # Simple menu
         menulist=""
         items=$(cat ${1} | wc -l)           # Count lines in file
         items=$((items+1))                  # wc counts newlines, so add 1
-        for (( i=1; i <= $items; ++i ))     # Load file contents into menulist
+        for (( i=1; i < $items; ++i ))     # Load file contents into menulist
         do
             item="$(head -n ${i} ${1} | tail -n 1)" # Read item from file
             menulist="$menulist $item"              # Add to variable
@@ -416,7 +416,7 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
     longest=0
     
     # Find length of longest item in file for use in reverse colour
-    for (( i=1; i <= items; ++i ))
+    for (( i=1; i < items; ++i ))
     do
         description="$(head -n ${i} ${filename} | tail -n 1)" # Read item from file
         length=$(echo "$description" | wc -c)                 # Length in characters
@@ -439,7 +439,7 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
     
     # Now run through the file again to print each item (Top one will be highlighted)
     selected=1
-    for (( i=1; i <= $items; ++i ))
+    for (( i=1; i < $items; ++i ))
     do
         description="$(head -n ${i} ${filename} | tail -n 1)" # Read item from file
         if [ $i -eq 1 ]; then                     # First item - print highlighted
@@ -932,8 +932,8 @@ function DoMega   # Cleans up crude data from input file and prepares mega-work.
     do
         line="$(head -n ${i} ${1} | tail -n 1)"            # Read one line at a time
         line="$i:$line"                                         # Number it
-        echo ${line##*( )} | cut -c 1-$width  >> mega-work.file    # Remove all leading spaces
-    done                                                        # and cut it down to fit width
+        echo ${line##*( )} | cut -c 1-$width  >> mega-work.file    # cut it down to fit width
+    done 
 
     if [ $items -le $display ]; then    # DoLongMenu is more convenient for a single page
         DoLongMenu "mega-work.file" "Ok Exit" "$term1"
@@ -945,6 +945,8 @@ function DoMega   # Cleans up crude data from input file and prepares mega-work.
     counter=1                   # For locating items in the file
 
     DoMegaPage $pageNumber $pages $display $items $counter "$term1"   # Prints the page
+    rm mega-work.file 2>/dev/null  # Clear the work file (hide errors)
+
 } # End DoMega
 
 function DoMegaPage     # The actual printing bit
