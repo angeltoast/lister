@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Developed by Elizabeth Mills
-# Revision 210507.1
+# Revision 210508.1
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -937,6 +937,7 @@ function DoMega   # Cleans up crude data from input file and prepares mega-work.
 
     if [ $items -le $display ]; then    # DoLongMenu is more convenient for a single page
         DoLongMenu "mega-work.file" "Ok Exit" "$term1"
+        rm mega-work.file 2>/dev/null  # Clear the work file
         return $?
     fi
 
