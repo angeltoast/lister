@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Developed by Elizabeth Mills
-# Revision 210508.1
+# Revision 210510
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -241,18 +241,18 @@ function DoMenu  # Simple menu
     padding=""
     longest=1
 
-    if [ -f "$1" ]; then                    # If a file
+    if [[ "$1" == "" ]]; then
+        DoMessage "No data to work with"
+        return 1
+    elif [ -f "$1" ]; then                          # If a file
         menulist=""
-        items=$(cat ${1} | wc -l)           # Count lines in file
-        items=$((items+1))                  # wc counts newlines, so add 1
-        for (( i=1; i < $items; ++i ))     # Load file contents into menulist
+        items=$(cat ${1} | wc -l)                   # Count lines in file
+        items=$((items+1))                          # wc counts newlines, so add 1
+        for (( i=1; i < $items; ++i ))              # Load file contents into menulist
         do
             item="$(head -n ${i} ${1} | tail -n 1)" # Read item from file
             menulist="$menulist $item"              # Add to variable
         done
-    elif [[ "$1" == "" ]]; then
-        DoMessage "No data to work with"
-        return 1
     else
         menulist="$1"    
     fi
@@ -412,11 +412,10 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
     winwidth=$(tput cols)             # Window width
     maxlen=$((winwidth -2))           # Maximum allowable item length
     items=$(cat "$filename" | wc -l)  # Count lines in file
-    items=$((items+1))                # wc counts newlines, so add 1
     longest=0
     
     # Find length of longest item in file for use in reverse colour
-    for (( i=1; i < items; ++i ))
+    for (( i=1; i <= items; ++i ))
     do
         description="$(head -n ${i} ${filename} | tail -n 1)" # Read item from file
         length=$(echo "$description" | wc -c)                 # Length in characters
@@ -438,8 +437,7 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
     GlobalCursorRow=3
     
     # Now run through the file again to print each item (Top one will be highlighted)
-    selected=1
-    for (( i=1; i < $items; ++i ))
+    for (( i=1; i <= $items; ++i ))
     do
         description="$(head -n ${i} ${filename} | tail -n 1)" # Read item from file
         if [ $i -eq 1 ]; then                     # First item - print highlighted
@@ -928,7 +926,7 @@ function DoMega   # Cleans up crude data from input file and prepares mega-work.
     rm mega-work.file 2>/dev/null  # Clear the work file (hide errors)
 
     # 1) Read the input file, number each item, shorten to fit page width and save to a new file
-    for (( i=1; i <= items; ++i )) 
+    for (( i=1; i < items; ++i )) 
     do
         line="$(head -n ${i} ${1} | tail -n 1)"            # Read one line at a time
         line="$i:$line"                                         # Number it
