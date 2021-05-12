@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Developed by Elizabeth Mills
-# Revision 210510
+# Revision 210512
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,30 +26,33 @@
 # -------------------------------------------------------------
 #       Shared .. General-purpose functions
 # -------------------------------------------------------------
-# DoHeading        60  Prepare a new window with heading
-# DoForm           83  Centred prompt for user-entry
-# DoMessage       101  Prints a message with Ok button
-# DoButtons       106  Prints one or two buttons
-# DoSwitchButtons 156  Alternate buttons
-# DoEnum          167  Enumerate a string
-# DoYesNo         202  Yes, a yes/no function
+# DoHeading          63  Prepare a new window with heading
+# DoForm             86  Centred prompt for user-entry
+# DoMessage         103  Prints a message with Ok button
+# DoButtons         108  Prints one or two buttons
+# DoSwitchButtons   157  Alternate buttons
+# DoEnum            168  Enumerate a string
+# DoYesNo           205  Yes, a yes/no function
 # -------------------------------------------------------------
 #       Menus .. Displaying and using menus
 # -------------------------------------------------------------
-# DoMenu          172   Generates a simple menu of one-word items
-# DoLongMenu      326   Generates a menu of multi-word items
-# DoFirstItem     468   Prints a single, centred item
-# DoNextItem      489   Prints successive aligned items
-# DoPrintRev      495   Reverses text colour at appointed position
-# DoKeypress      510   Respond to keypress
+# DoMenu            233   Generates a simple menu of one-word items
+# DoLongMenu        380   Generates a menu of multi-word items
+# DoFirstItem       519   Prints a single, centred item
+# DoNextItem        541   Prints successive aligned items
+# DoPrintRev        547   Reverses text colour at appointed position
+# DoKeypress        567   Respond to keypress
 # --------------------------------------------------------------
 #       Lists .. Display long lists and accept user input
 # --------------------------------------------------------------
-# DoLister        548   Generates a numbered list of one-word items in columns
-# DoSelectPage    680   Used by DoLister to manage page handling
-# DoPrintPage     746   Used by DoLister to display selected page
-# DoMega          841   Pages full of extra long text, trimmed to fit
-# DoMegaPage      891   Does the printing for DoMega
+# DoLister          602 Generates a numbered list of one-word items in columns
+# ListerSelectPage  733 sed by DoLister to manage page handling
+# ListerPrintPage   796 Used by DoLister to display selected page
+# DoMega            884 Pages full of extra long text, trimmed to fit
+# MegaPage          933 Does the printing for DoMega
+# DoRadio          1009 Accepts input of up to four columns of user-prompts
+# RadioColumn 1118 Prints all the columns with 'radio buttons'
+# RadioSelect      1152 Responds to user input via cursor keys
 # ---------------------------------------------------------------
 
 # Global variables
@@ -89,8 +92,7 @@ function DoForm    # Centred prompt for user-entry
 
     local winwidth length startpoint empty
   
-    winwidth=$(tput cols)
-    length=${#1}
+    winwidth=$(tput cols); length=${#1}
       
     if [ ${length} -le ${winwidth} ]; then
         startpoint=$(( (winwidth - length) / 2 ))
@@ -167,31 +169,35 @@ function DoSwitchButtons       # $1 = Selected button
 } # End DoSwitchButtons
 
 function DoEnum # Enumerate a word from a string variable
-{               # $1 Either a word to enumerate, or a number to look up
-                # $2 String of space-separated one-word items
+{               # $1 String of space-separated one-word items
+                # $2 Either a word to enumerate, or a number to look up
+                
                 # Returns item number as $? and item detail as $GlobalChar
 
     local items item counter x
-    x=0
-    items=$(echo "$2" | wc -w)
+    x=0     # Ensure numeric variable is used for cut command
+    items=$(echo "$1" | wc -w)
 
-    # Test if $1 numeric or not
-    case $1 in
-    *[0-9]*)   x=$1
-        GlobalChar=$(echo "$2" | cut -d' ' -f$x)  # Find the word
-        return $1
+    # Test if $2 numeric, word or null
+    case $2 in
+    "") GlobalChar=$(echo "$1" | cut -d' ' -f$items)    # No criteria supplied
+        return $items                                   # Return word count
     ;;
-    *)  counter=1                                 # Find the number
-        for item in $2  # Count through list
+    *[0-9]*)   x=$2
+        GlobalChar=$(echo "$1" | cut -d' ' -f$x)        # Number supplied, find the word
+        return $2                                       # Return the number
+    ;;
+    *)  counter=1                                       # Word supplied, find the number
+        for item in $1  
         do
-            if [ $item == $1 ]; then
+            if [ $item == $2 ]; then
                 GlobalChar="$item"
                 break
             fi
             counter=$((counter+1))
-            if [ $counter -gt $items ]; then        # In case $2 not found in $1
-                GlobalChar=""
-                counter=0
+            if [ $counter -gt $items ]; then            # In case $2 not found in $1
+                GlobalChar="Not found"
+                counter=0                               # Return not found
                 break
             fi
         done
@@ -199,7 +205,7 @@ function DoEnum # Enumerate a word from a string variable
     esac
 } # End DoEnum
 
-function DoYesNo      # A yes/no function
+function DoYesNo    # A yes/no function
 {                   # $1 Text for prompt, eg: "Reload the csv?"
     local selected
     
@@ -237,9 +243,7 @@ function DoMenu  # Simple menu
   
     local winwidth startpoint padding itemlen longest counter menulist
     local name items buttontext message buttonRow item i
-    winwidth=$(tput cols) 
-    padding=""
-    longest=1
+    winwidth=$(tput cols); padding=""; longest=1
 
     if [[ "$1" == "" ]]; then
         DoMessage "No data to work with"
@@ -257,15 +261,10 @@ function DoMenu  # Simple menu
         menulist="$1"    
     fi
 
-    if [ ! $2 ]; then
-        buttontext="Ok Exit"
-    else
-        buttontext="$2"
-    fi
+    if [ ! $2 ]; then buttontext="Ok Exit"; else buttontext="$2"; fi
   
     case $3 in
-      "") message=" "
-      ;;
+      "") message=" " ;;
       *) message="$3"
     esac
    
@@ -451,9 +450,7 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
  
     GlobalCursorRow=$((GlobalCursorRow+1))
     DoFirstItem "Use cursor keys to navigate"
-    buttonrow=$((GlobalCursorRow))
-    selected=1
-    selectedbutton=1
+    buttonrow=$((GlobalCursorRow)); selected=1; selectedbutton=1
    
     DoButtons "$buttontext" $selectedbutton $buttonrow
     
@@ -524,8 +521,10 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
 
 function DoFirstItem  # Aligned text according to screen size
 {                     # $1 Text to print
+    
     local winwidth maxlen textprint textlength startpoint
-    winwidth=$(tput cols)                   # Recheck window width  
+
+    winwidth=$(tput cols)                               # Recheck window width
     maxlen=$((winwidth-2))                  # Set Limit to 2 characters < Width
     textprint="$1"                          # Text passed from caller
     textlength=$(echo $textprint | wc -c)   # Count characters 
@@ -537,14 +536,13 @@ function DoFirstItem  # Aligned text according to screen size
      
     startpoint=$(( (winwidth - textlength) / 2 ))   # Horizontal startpoint
     tput cup $GlobalCursorRow $startpoint           # Move cursor to startpoint
-      
     printf "%-s\\v" "$textprint"                    # Print the item
     GlobalCursorRow=$((GlobalCursorRow+1))          # Advance line counter
     return $startpoint
 } # End DoFirstItem
 
 function DoNextItem   # Subsequent item in an aligned list
-{                       # $1 startpoint; $2 Item text
+{                     # $1 startpoint; $2 Item text
   tput cup "$GlobalCursorRow" "$1"  # Move cursor to row and startpoint
   printf "%-s\\n" "$2"              # Print with a following newline
 }
@@ -553,14 +551,19 @@ function DoPrintRev   # Prints selected item by reversing colour
 {    # $1 Startpoint $2 Length of longest; $3 Item text
 
     local longest padding spaces itemlength
-    
-    longest="$2"
-    itemlength=$(echo "$3" | wc -c)     # Get length
-    spaces=$((longest-itemlength))      # Calculate spaces needed to pad it out
-    padding="$(printf '%*s' "$spaces")" # Create spaces to make length
+
+    longest=$2
+    itemlength=$(echo $3 | wc -c)           # Get length
+    itemlength=$(( itemlength - 1 ))        # Get length
+    if [ $itemlength -lt $longest ]; then
+        spaces=$((longest-itemlength))      # Calculate spaces needed to pad it out
+        padding="$(printf '%*s' "$spaces")" # Create spaces to make length
+    else
+        padding=""
+    fi
     tput cup "$GlobalCursorRow" "$1"    # Move cursor to startpoint
     tput rev                            # Reverse colour
-    printf "%-s" "$3 $padding"          # Reprint item at this position
+    printf "%-s" "$3${padding}"          # Reprint item at this position
     tput sgr0 	                        # Reset colour
 }
 
@@ -575,24 +578,21 @@ function DoKeypress # Reads keyboard and returns value via GlobalInt
         tput cnorm                            # Reset cursor
         case "$keypress" in
         "") # Ok/Return pressed
-            GlobalInt=0
-            break
+            GlobalInt=0; break
             ;;
         A) # Up arrow:
-            GlobalInt=1
-            break
+            GlobalInt=1; break
             ;;
         B) # Down arrow
-            GlobalInt=3
-            break
+            GlobalInt=3; break
             ;;
         C) # Right arrow
-            GlobalInt=4
-            break
+            GlobalInt=4; break
             ;;
         D) # Left arrow
-            GlobalInt=2
-            break
+            GlobalInt=2; break
+            ;;
+        x)  GlobalInt=5; break         # New radio-buttons option
             ;;
         *)  keypress=""
         esac
@@ -623,8 +623,7 @@ function DoLister  # Generates a (potentially multi-page) list from a file.
         page=""                 # List of column numbers for the selected page
         pageNumber=1            # Page selector
         pageWidth=3             # Start width accumulator with margins
-        columnWidth=0
-        lastPage=0
+        columnWidth=0; lastPage=0
 
         # Establish terminal size and set variables
         winWidth=$(tput cols)               # Start with full terminal width
@@ -730,20 +729,17 @@ function DoLister  # Generates a (potentially multi-page) list from a file.
             fi
         done
     done
-    #  Proceed to page-handling in DoSelectPage
-    DoSelectPage $winHeight $winCentre $lastPage
+    #  Proceed to page-handling in ListerSelectPage
+    ListerSelectPage $winHeight $winCentre $lastPage
 } # End DoLister
 
-function DoSelectPage   # Organises a (nominated) pageful of data for display
+function ListerSelectPage   # Organises a (nominated) pageful of data for display
 {                       # $1 = winHeight; $2 = winCentre; $3 = lastPage
 
     local pageNumber lastPage advise previous next instructions instrLen
     local winHeight winCentre
 
-    pageNumber=1 
-    winHeight=$1
-    winCentre=$2
-    lastPage=$3
+    pageNumber=1; winHeight=$1; winCentre=$2; lastPage=$3
     advise="or ' ' to exit without choosing" 
     previous="Enter 'p' for previous page"
     next="Enter 'n' for next page"
@@ -757,9 +753,9 @@ function DoSelectPage   # Organises a (nominated) pageful of data for display
                 instructions=""
             fi
             GlobalCursorRow=1                       # Reset cursor to top of page
-            DoPrintPage "$winHeight" "$winCentre" "$instructions" "$pageNumber" "$lastItem"
+            ListerPrintPage "$winHeight" "$winCentre" "$instructions" "$pageNumber" "$lastItem"
  
-            case $? in           # Return code from DoPrintPage will be 0, 1, or 2
+            case $? in           # Return code from ListerPrintPage will be 0, 1, or 2
             1)  continue         # < (left arrow) = illegal call to previous page
             ;;
             2)  if [ $lastPage -gt 1 ]; then        # More than 1 page in total
@@ -772,7 +768,7 @@ function DoSelectPage   # Organises a (nominated) pageful of data for display
         ;; 
         $lastPage) instructions="$previous"
             GlobalCursorRow=1                       # Reset cursor to top of page
-            DoPrintPage "$winHeight" "$winCentre" "$instructions" "$pageNumber" "$lastItem"
+            ListerPrintPage "$winHeight" "$winCentre" "$instructions" "$pageNumber" "$lastItem"
             case $? in                       # Return will be 0, 1, or 2
             1)  pageNumber=$((pageNumber-1)) # < (left arrow) = previous page
             ;;
@@ -784,7 +780,7 @@ function DoSelectPage   # Organises a (nominated) pageful of data for display
         *)  instructions="$previous - $next"
             GlobalCursorRow=1                       # Reset cursor to top of page
          
-            DoPrintPage "$winHeight" "$winCentre" "$instructions" "$pageNumber" "$lastItem"
+            ListerPrintPage "$winHeight" "$winCentre" "$instructions" "$pageNumber" "$lastItem"
             case $? in                              # Return will be 0, 1, or 2
             1)  if [ $pageNumber -gt 1 ]; then      # Not on page 1
                     pageNumber=$((pageNumber-1))    # < (left arrow) = previous page
@@ -798,9 +794,9 @@ function DoSelectPage   # Organises a (nominated) pageful of data for display
             esac
         esac
     done
-} # End DoSelectPage
+} # End ListerSelectPage
 
-function DoPrintPage      # Prints the page prepared and selected in DoSelectPage
+function ListerPrintPage      # Prints the page prepared and selected in ListerSelectPage
 {  # $1 winHeight; $2 winCentre; $3 instructions; $4 pageNumber; $5 lastItem;
    # The arrays used here are declared and initialised in DoLister as global in scope
 
@@ -808,13 +804,8 @@ function DoPrintPage      # Prints the page prepared and selected in DoSelectPag
     local counter columnWidth instructions instrLen lastItem advisLen
     local winHeight winCentre startPoint topRow
 
-    winHeight=$1
-    winCentre=$2
-    instrLen=${#3}
-    instructions="$3"
-    pageNumber="$4"
-    lastItem="$5"
-    counter=1
+    winHeight=$1; winCentre=$2; instrLen=${#3}; instructions="$3"
+    pageNumber="$4"; lastItem="$5"; counter=1
 
     DoHeading $Backtitle                          # Prepare window
     DoFirstItem "Page $pageNumber of $lastPage"
@@ -842,9 +833,7 @@ function DoPrintPage      # Prints the page prepared and selected in DoSelectPag
                 tput cup $GlobalCursorRow $columnStart   
                 printf "%-s\n" "${counter}) $item"
                 
-                if [ "$item" == "$lastItem" ]; then
-                    break
-                fi
+                if [ "$item" == "$lastItem" ]; then break; fi
                 
                 GlobalCursorRow=$((GlobalCursorRow+1))
                 counter=$((counter+1))
@@ -893,7 +882,7 @@ function DoPrintPage      # Prints the page prepared and selected in DoSelectPag
             done
         esac
     done
-} # End DoPrintPage
+} # End ListerPrintPage
 
 function DoMega   # Cleans up crude data from input file and prepares mega-work.file
 {   # Generates a (potentially multi-page) numbered list from a file
@@ -909,14 +898,10 @@ function DoMega   # Cleans up crude data from input file and prepares mega-work.
     fi
     
     term1="$2"
-    width=$(tput cols)
-    width=$((width-2))
-    items=$(cat $1 | wc -l)         # Count lines in file
-    items=$((items+1))              # wc counts newlines, so add 1
-    winHeight=$(tput lines)
-    display=$((winHeight-6))        # Items to display in one pageful
-    pages=$((items/display))
-    remainder=$((items%display))    # May need extra page
+    width=$(tput cols); width=$((width-2))              # Allow margin
+    items=$(cat $1 | wc -l); items=$((items+1))         # wc counts newlines, so add 1
+    winHeight=$(tput lines); display=$((winHeight-6))   # Items to display in one pageful
+    pages=$((items/display)); remainder=$((items%display))  # May need extra page
     if [ $pages -eq 0 ]; then
         pages=1
     elif [ $remainder -gt 0 ]; then
@@ -943,12 +928,12 @@ function DoMega   # Cleans up crude data from input file and prepares mega-work.
     GlobalCursorRow=2
     counter=1                   # For locating items in the file
 
-    DoMegaPage $pageNumber $pages $display $items $counter "$term1"   # Prints the page
+    MegaPage $pageNumber $pages $display $items $counter "$term1"   # Prints the page
     rm mega-work.file 2>/dev/null  # Clear the work file (hide errors)
 
 } # End DoMega
 
-function DoMegaPage     # The actual printing bit
+function MegaPage     # The actual printing bit
 {                       # $1 pageNumber; $2 pages; $3 display; #4 items; $5 counter;
                         # $6 information to be printed above the list
 
@@ -958,12 +943,7 @@ function DoMegaPage     # The actual printing bit
     advise="Or ' ' to exit without choosing" 
     previous="Enter 'p' for previous page"
     next="'n' for next page"
-    pageNumber=$1
-    pages=$2
-    display=$3
-    items=$4
-    counter=$5
-    term1="$6"
+    pageNumber=$1; pages=$2; display=$3; items=$4; counter=$5; term1="$6"
 
     while true      # Print the actual page
     do
@@ -1024,5 +1004,316 @@ function DoMegaPage     # The actual printing bit
         esac
         counter=$(((pageNumber*display)+1-display))
     done
-} # End DoMegaPage
+} # End MegaPage
+
+function DoRadio {  # A function to print up to four columns of radio buttons. The user
+                    # moves the cursor using the cursor keys, and marks one button in 
+                    # each column by pressing 'x'
+    # $1 Headline text; $2 (and optional $3 & $4) are prompt text for the radio buttons
+    # $2, $3 & $4 are strings of space-separated one-word prompts.
+    # The first item in each of $2, $3 and $4 are column headings (required)
+    # Sets global variable GlobalChar with the position of the selected item in each column
+    # (eg: 4 1 5 2) You can then relate each number to the string variable using DoEnum
+  
+    local headline column1 column2 column3 marked results
+    local item i counter savecursorrow width columns
+    local longest1 longest2 longest3 longest4
+    local startpoint firstpoint items1 items2 items3 items4
+
+    # Load the parameters
+    headline="$1"; column1="$2"; column2="$3"; column3="$4"; column4="$5"
+    longest1=1; longest2=1; longest3=1; longest4=1; 
+    items1=0; items2=0; items3=0; items4=0
+
+    # Find the longest item in each column
+    for item in $column1
+    do
+        if [ ${#item} -gt $longest1 ]; then longest1=${#item}; fi # Get length of longest
+    done
+    columns=1
+    longest1=$((longest1+1))  # Add a space b button
+    
+    if [ "$column2" != "" ]; then
+        for item in $column2
+        do
+            if [ ${#item} -gt $longest2 ]; then longest2=${#item}; fi # Get length of longest
+        done
+        columns=$((columns+1))
+        longest2=$((longest2+1))
+    fi
+    
+    if [ "$column3" != "" ]; then
+        for item in $column3
+        do
+            if [ ${#item} -gt $longest3 ]; then longest3=${#item}; fi # Get length of longest
+        done
+        columns=$((columns+1))
+        longest3=$((longest3+1))
+    fi
+
+    if [ "$column4" != "" ]; then
+        for item in $column4
+        do
+            if [ ${#item} -gt $longest4 ]; then longest4=${#item}; fi # Get length of longest
+        done
+        columns=$((columns+1))
+        longest4=$((longest4+1))
+    fi
+    
+    width=$(tput cols)
+    margin=$(((width-longest1-longest2-longest3-longest4)/(columns*2)))
+    startpoint=$margin
+    
+    DoHeading
+    GlobalCursorRow=$((GlobalCursorRow + 1 ))
+    DoFirstItem "$headline"
+    GlobalCursorRow=$((GlobalCursorRow + 1 ))
+    savecursorrow=$GlobalCursorRow              # Top row of columns
+    counter=0
+
+    # Get page height and set cursor row 4 up from bottom
+    GlobalCursorRow=$(tput lines)
+    GlobalCursorRow=$((GlobalCursorRow-4))
+    # User guidance
+    DoFirstItem "Use cursor keys to navigate"
+    DoFirstItem "'x' to select/deselect"
+    DoFirstItem "[Enter] when done"
+
+    # Print all the columns and buttons
+    GlobalCursorRow=$savecursorrow
+    RadioColumn "$column1" 3 1 $((margin)) $longest1 
+    firstpoint=$?  # Position of first radio button
+    items1=$GlobalInt
+    longest1=$((longest1+margin))  # Add for columns
+    
+    if [ "$column2" != "" ]; then
+        GlobalCursorRow=$savecursorrow    # Top of column    
+        RadioColumn "$column2" 3 2 $((margin+longest1)) $longest2
+        items2=$GlobalInt
+        longest2=$((longest2+margin))  # Add for columns
+    fi
+
+    if [ "$column3" != "" ]; then
+        GlobalCursorRow=$savecursorrow
+        RadioColumn "$column3" 3 3 $((margin+longest1+longest2)) $longest3
+        items3=$GlobalInt
+        longest3=$((longest3+margin))  # Add for columns
+    fi
+
+    if [ "$column4" != "" ]; then
+        GlobalCursorRow=$savecursorrow
+        RadioColumn "$column4" 3 3 $((margin+longest1+longest2+longest3)) $longest4
+        items4=$GlobalInt
+        longest4=$((longest4+margin))  # Add for columns
+    fi
+    
+    GlobalCursorRow=$((savecursorrow+1))
+    RadioSelect $columns $firstpoint "$longest1 $longest2 $longest3 $longest4" "$items1 $items2 $items3 $items4"
+} # End DoRadio
+
+function RadioColumn { # Handle printing of one column, its header and the items in it
+                            # $1 items; $2 total columns; $3 this column (1 to 3)
+                            # $4 startpoint $5 longest
+    local list columns column longest width
+    local item i items savecursorrow startpoint
+
+    list="$1"; columns=$2; column=$3; items=0
+    savecursorrow=$GlobalCursorRow
+    startpoint=$4; longest=$5
+    # Draw the column of items
+    for item in $list
+    do
+        if [ $items -eq 0 ]; then
+            tput cup "$GlobalCursorRow" "$startpoint"  # Move cursor to row and startpoint
+            printf "\e[4m%-s\n\e[0m" " $item "
+        else
+            DoNextItem $startpoint "$item"
+        fi
+        GlobalCursorRow=$((GlobalCursorRow + 1 ))
+        items=$((items+1))
+    done
+    items=$((items-1))  # Exclude headings
+    # Reset position to top row and print all radio buttons for this column
+    startpoint=$((startpoint+longest))
+    GlobalCursorRow=$((savecursorrow+1))    # After column heading
+    for (( i=1; i<=items; i++ )) # Now draw a ( ) beside each
+    do
+        DoNextItem $startpoint "( )"
+        GlobalCursorRow=$((GlobalCursorRow + 1 ))
+    done
+    GlobalInt=$items
+    return $startpoint
+} # End RadioColumn
+
+function RadioSelect {  # Highlight the top radio button of the first column, then the
+                        # next one as the cursor is moved, switch columns according to
+                        # cursor movement. Mark an item as selected or deselected if the
+                        # user presses 'x'. Also unmark a previously selected item in
+                        # the column if the user selects a different one.
+
+    # $1 number of columns (to monitor column switching); $2 firstpoint (initially column1)
+    # $3 string containing the lengths of the longest items in each column
+    # $4 string containing the number of items in each column
+
+    local columns column marked1 marked2 marked3 selected
+    local item i counter savecursorrow firstpoint columnwidth unmark toprow
+
+    declare -a marked
+    declare -a items
+    declare -a longest
+ 
+    marked[1]=0; marked[2]=0; marked[3]=0; marked[4]=0; selected=1; column=1; unmark=0
+    columns=$1
+    firstpoint=$2                   # Position over the first pair of brackets
+
+    longest[1]=$(echo $3 | cut -d' ' -f1)
+    longest[2]=$(echo $3 | cut -d' ' -f2)
+    longest[3]=$(echo $3 | cut -d' ' -f3)
+    longest[4]=$(echo $3 | cut -d' ' -f4)
+    
+    toprow=$GlobalCursorRow; savecursorrow=$GlobalCursorRow
+    DoPrintRev $firstpoint 3 "( )"  # And mark initial selected item
+
+    items[1]=$(echo $4 | cut -d' ' -f1)
+    items[2]=$(echo $4 | cut -d' ' -f2)
+    items[3]=$(echo $4 | cut -d' ' -f3)
+    items[4]=$(echo $4 | cut -d' ' -f4)
+
+    while true  # The cursor key action will change either the
+    do          # selected radio button or one of the bottom buttons
+        DoKeypress      # Sets numeric $GlobalInt for up/down or left/right)
+        case "$GlobalInt" in
+        0)  GlobalChar="${marked[1]} ${marked[2]} ${marked[3]} ${marked[4]}"
+            return 0
+        ;;
+        1)  # Up arrow:
+            # First reprint currently selected item in plain
+            GlobalCursorRow=$((selected+toprow-1))   # Set to new row (from top)
+
+            tput cup "$GlobalCursorRow" "$firstpoint"   # Move cursor
+            if [ ${marked[${column}]} -eq $selected ]; then
+                printf "(x)"            # Print selected item in plain   "( )"
+            else
+                printf "( )"            # Print unselected item in plain  
+            fi
+            # Next move the selected item
+            if [ $selected -eq 1 ]; then                # If at top
+                selected=${items[${column}]}                         # Move pointer to bottom
+            else
+                selected=$(( selected -1 ))             # Else move up one
+            fi
+            # Print newly selected item in reverse colour (padded)
+            GlobalCursorRow=$((selected+toprow-1))
+            if [ ${marked[${column}]} -eq $selected ]; then
+                DoPrintRev "$firstpoint" 3 "(x)"         # Print selected item in plain   "( )"
+            else
+                DoPrintRev "$firstpoint" 3 "( )"         # Print unselected item in plain  
+            fi
+        ;;
+        3) # Down arrow
+            # First reprint currently selected item in plain
+            GlobalCursorRow=$((selected+toprow-1))   # Set to new row (menu starts at row 4)
+            tput cup "$GlobalCursorRow" "$firstpoint"   # Move cursor
+            if [ ${marked[${column}]} -eq $selected ]; then
+                printf "(x)"            # Print selected item in plain   "( )"
+            else
+                printf "( )"            # Print unselected item in plain  
+            fi
+            # Next move the selected item
+            if [ $selected -eq ${items[${column}]} ]; then  # If at bottom
+                selected=1                                  # Move to top
+            else
+                selected=$((selected+1))                    # Else move down one
+            fi
+            # Print newly selected item in reverse colour (padded)
+             GlobalCursorRow=$((selected+toprow-1))         # Set to new row
+            if [ ${marked[${column}]} -eq $selected ]; then
+                DoPrintRev "$firstpoint" 3 "(x)"            # Hilight marked item 
+            else
+                DoPrintRev "$firstpoint" 3 "( )"            # Highlight unmarked item  
+            fi
+        ;;
+        4)  # Switch column right
+            if [ $column -lt $columns ] && [ $columns -gt 1 ]; then
+                # Reprint currently selected button in plain (marked or unmarked)
+                tput cup "$GlobalCursorRow" "$firstpoint"   # Position cursor
+                if [ ${marked[${column}]} -eq $selected ]; then
+                    printf "(x)"            # Print selected item in plain 
+                else
+                    printf "( )"            # Print unselected item in plain  
+                fi
+
+                selected=1                  # First item in new column
+                GlobalCursorRow=$toprow     # Top of new column
+                column=$((column + 1))      # Advance column
+                firstpoint=$((firstpoint + ${longest[${column}]}))  # How far to jump
+                tput cup "$GlobalCursorRow" "$firstpoint"           # Position cursor
+                
+                # Find out if the selected item in the new column is marked or not
+                # and print as appropriate (highlighted)
+                if [ ${marked[${column}]} -eq $selected ]; then
+                    DoPrintRev "$firstpoint" 3 "(x)"         # Hilight marked item 
+                else
+                    DoPrintRev "$firstpoint" 3 "( )"         # Highlight unmarked item  
+                fi
+            fi
+            continue    # Then loop
+        ;;
+        2)  # Switch column left
+            if [ $column -gt 1 ]; then
+                # Reprint currently selected button in plain (marked or unmarked)
+                tput cup "$GlobalCursorRow" "$firstpoint"   # Position cursor
+                if [ ${marked[${column}]} -eq $selected ]; then
+                    printf "(x)"            # Print selected item in plain   "( )"
+                else
+                    printf "( )"            # Print unselected item in plain  
+                fi
+                
+                selected=1                                      # Top item of new column
+                GlobalCursorRow=$toprow                             # Top row
+                firstpoint=$((firstpoint - ${longest[${column}]}))  # How far to jump
+                column=$((column - 1))                          # Then retard column number
+                tput cup "$GlobalCursorRow" "$firstpoint"       # Position cursor
+                
+                # Find out if the selected item in the new column is marked or not
+                # and print as appropriate (highlighted
+                if [ ${marked[${column}]} -eq $selected ]; then
+                    DoPrintRev "$firstpoint" 3 "(x)"         # Hilight marked item 
+                else
+                    DoPrintRev "$firstpoint" 3 "( )"         # Highlight unmarked item  
+                fi
+                
+                # Find out if the selected item in the new column is marked or not
+                # and print as appropriate (highlighted
+                if [ ${marked[${column}]} -eq $selected ]; then
+                    DoPrintRev "$firstpoint" 3 "(x)"         # Hilight marked item 
+                else
+                    DoPrintRev "$firstpoint" 3 "( )"         # Highlight unmarked item  
+                fi
+            fi
+            continue    # Then loop
+        ;;
+        5) # Remove or add an x in the brackets of the selected (hightlighted) item
+            if [ ${marked[${column}]} -eq $selected ]; then
+                DoPrintRev "$firstpoint" 3 "( )"
+                marked[${column}]=0
+            else
+            # If another button in this column was previously marked, unmark it
+                if [ ${marked[${column}]} -ne 0 ]; then
+                    unmark=${marked[${column}]}
+                    unmark=$((unmark+toprow-1))
+                 #   savecursorrow=$GlobalCursorRow     # Save current row
+                    tput cup "$unmark" "$firstpoint"    # Move cursor to the marked item
+                    printf "( )"                        # Print it unmarked in plain
+                    tput cup "$GlobalCursorRow" "$firstpoint" # Restore the current cursor position
+                fi
+            # Then print this one as marked and record in the array ...
+                DoPrintRev "$firstpoint" 3 "(x)"
+                marked[${column}]=$selected
+            fi
+        ;;
+        *)  continue  
+        esac
+    done
+} # End RadioSelect
 # End Lists

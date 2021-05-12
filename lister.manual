@@ -1,6 +1,9 @@
 Using the lister functions - Elizabeth Mills
 
-Revision 21.05.04.1 May 2021
+Revision 210512 May 2021
+
+NOTE:   Many recent additions and changes in Lister mean that this manual is not up to
+        date. I will update it as soon as my workload goes down.        
 
 The scripts described herein are shared in the hope that they will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
@@ -13,28 +16,28 @@ General Public License is available from the lister page at: https://github.com/
 
 Introduction
 ------------
-The philosophy behind lister.sh was conceived as part of the independent Feliz install
+The philosophy behind lister.sh was conceived as part of the independent Feliz installation
 script for the Arch Linux operating system. There was a need for a 'friendlier' display of
 information and getting user input, but it had to be light and self-contained, because of
 the constraints of running the script in the Arch Linux live session. At that time, the
-module was called Listgen', but it has changed completely since those days, and all the
+module was called 'Listgen', but it has changed completely since those days, and all the
 functions have been rewritten and renamed, so a name change seems appropriate. Feliz is no
-longer maintained, and lister.sh is now an independent project. It is written entirely in
+longer maintained, so Lister is now an independent project. It is written entirely in
 bash, and is open-source, so you can edit it to suit your purposes. 
 
-In this guide, aimed at intermediate scripters, we will look at how the functions in the
+In this guide, aimed at intermediate scripters, I will explain how the functions in the
 lister.sh module can be incorporated to help you to improve the display of information
 while running your own scripts.
 
-The lister module is self-contained and application-independent. It initialises all its
+The Lister module is self-contained and application-independent. It initialises all its
 own variables, and contains all the functions it needs; any of the functions may be called
 from any scripts. You only have to put a copy of lister.sh in the same location as your
 scripts, and source it, to be able to add all the features of lister to your scripts.
 
-Some of the functions share the outcome of their processes via the global variables
-GlobalChar and GlobalInt. One other global variable is used - GlobalCursorRow, which
-tracks vertical alignment. All other variables are local to their functions, and values
-must be passed as parameters between them.
+Some of the functions share the outcome of their processes via the two global variables
+GlobalChar and GlobalInt, for returning text or numeric results, respectively. One other
+global variable is used - GlobalCursorRow - which tracks vertical alignment. All other
+variables are local to their functions, and values are passed as parameters between them.
 
 About the lister.sh functions
 -----------------------------
