@@ -1,50 +1,62 @@
-The 'lister' library is a set of user interface functions:
-                 .------------------------------------------.
-----------------( Shared class . General-purpose functions   )----------------
-                 '------------------------------------------'
-DoNotFound      Displays a warning message to inform user of a problem.
-                May be called from any error-trapping code.
-                Optional parameter: 
-                $1 A short text message.
-                Returns: No values are set
-------------------------------------------------------------------------------
+The 'lister' library is a set of semi-graphical user interface functions:
+                      .------------------------------------------.
+---------------------( Shared class .. General-purpose functions  )----------------------
+                      '------------------------------------------'
 DoHeading       Clears the active window and prints a heading.
                 Uses the global variable 'Backtitle' for the heading.
                 Returns: No values are set.
-------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 DoForm          Prints a centred prompt for user to enter data.
                 Expects one parameter: 
                 $1 A short text message to instruct the user.
                 Sets $GlobalChar with the text entered by the user.
-------------------------------------------------------------------------------
-DoMessage       Prints an informative message with an Ok button.
-                Optional parameter: 
-                $1 A short text message
+-----------------------------------------------------------------------------------------
+DoMessage       Prints an informative message in a pop-up terminal.
+                Parameters: One or two text messages:
+                DoMessage "Sorry, 'file.name' not found" "I cannot go on like this"
                 Returns: No values are set
-------------------------------------------------------------------------------
-DoButtons       Prints a row of buttons
-                Parameters: 
-                $1 Button text (eg: "Ok" for one button, or "Yes No" for two; 
-                $2 Which button to highlight (numeric: 1=left or 2=right);
-                $3 The row of the window on which the buttons are to be printed:
-                     (this should normally be within the range 0 to 24);
-                Sets the return code $? to the number of the button selected.
-------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 DoEnum          Enumerates words in a string
                 Parameters:
-                $1 A string of words; $2 Either a word or a number to be looked up
-                in $1 (if not passed, will return the total number of words in $1).
+                $1 A string of words; $2 Either a word or a number to be looked up in $1.
+                If $2 is not passed, DoEnum will return the total number of words in $1.
                 Sets the return code $? to the number of the word, and ...
                 global variable $GlobalChar to the word at that number.
-------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
 DoYesNo         A really simple yes/no prompt
                 Parameter:
                 $1 A short line of text to which the answer can be yes or no.
                 Sets the return code $? to 1 (yes) or 2 (no) and ...
                 global variable $GlobalChar to 'Yes' or 'No'.
-                 .------------------------------------------.
-----------------( Menu class .. Displaying and using menus   )----------------
-                 '------------------------------------------'
+----------------------------------------------------------------------------------------
+DoRadio         Prints up to four columns of radio buttons. The user moves the cursor
+                using the cursor keys, and marks one button in each column by pressing 'x'
+                Parameters:
+                $1 Headline text; $2 (and optional $3, $4 & $5) prompt text for the radio
+                buttons (strings of space-separated one-word prompts).
+                The first item in each of $2, $3, $4 & $5 are column headings (required)
+                Sets GlobalChar with the position of the selected item in each column
+                (eg: 4 1 5 2) You can then relate each number to the original string
+                variable using the DoEnum function.
+RadioColumn     Handles printing of one column - the header, the items in it, and the buttons.
+                Parameters (all generated and passed by DoRadio):
+                $1 items in this column; $2 total number of columns;
+                $3 the number of the current column to be printed (1 to 4)
+                $4 The startpoint (how many characters in from the left;
+                $5 The length of the longest item in the current column.
+RadioSelect     Highlights the top radio button of the first column, then the next one as
+                the cursor is moved vertically. Switches columns according to horizontal
+                cursor movement. Marks an item as selected or deselected if the user
+                presses 'x'. Also unmarks a previously selected item in the column if the
+                user selects a different one.
+                Parameters (all generated and passed by DoRadio):
+                $1 number of columns (to monitor column switching) generated by DoRadio;
+                $2 firstpoint (initially column1)
+                $3 a string containing the lengths of the longest items in each column
+                $4 a string containing the number of items in each column
+                    .-------------------------------------------.
+-------------------(  Menu class .. Displaying and using menus   )----------------------
+                    '-------------------------------------------'
 DoMenu          Generates a simple menu of one-word items, centred on the page.
                 Parameters:
                 $1 String of single-word menu items, or the name of a file 
@@ -54,7 +66,7 @@ DoMenu          Generates a simple menu of one-word items, centred on the page.
                 $3 May be a prompt message or empty.
                 Sets the return code $? to the number in the menu of the item
                 selected.
-------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 DoLongMenu      Generates a menu of multi-word items.
                 Parameters:
                 $1 The name of a file containing the verbose menu items;
@@ -71,17 +83,26 @@ DoLongMenu      Generates a menu of multi-word items.
                           (we don't want to go off the screen, do we?)
                 Sets the return code $? to the number in the menu of the item
                 selected.
-------------------------------------------------------------------------------
+PrintButtons    Used by the menu functions. Prints a row of buttons
+                Parameters: 
+                $1 Button text (eg: "Ok" for one button, or "Yes No" for two; 
+                $2 Which button to highlight (numeric: 1=left or 2=right);
+                $3 The row of the window on which the buttons are to be printed:
+                     (this should normally be within the range 0 to 24);
+                Sets the return code $? to the number of the button selected.
+SwitchButtons   Alternates between two buttons
+                Parameter: Number of the currently selected button
+-----------------------------------------------------------------------------------------
 DoFirstItem     Prints a single item, centred, at the top of the page.
                 Parameter: 
                 $1 Text to print;
                 Sets $GlobalCursorRow for any successive print instructions.
-------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 DoNextItem      Prints the next item of a menu
                 Parameters:
                 $1 startpoint; $2 Item text.
                 Sets $GlobalCursorRow for any successive print instructions.
-------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 DoPrintRev      Prints a menu item in reverse text colour ...
                       (matched to the length of the longest item in the menu).
                 Parameters:
@@ -95,9 +116,9 @@ DoKeypress      Used by DoMenu and DoLongMenu, but also available for other uses
                 No parameters.
                 Sets $GlobalInt with a number representing the key pressed:
                       (0=Enter; 1=Up; 2=Left; 3=Down; 4=Right)
-             .---------------------------------------------------------.
-------------(  List class .. Display long lists and accept user input   )----------
-             '---------------------------------------------------------'
+               .---------------------------------------------------------.
+--------------(  List class .. Display long lists and accept user input   )--------------
+               '---------------------------------------------------------'
 DoLister        Prepares arrays for use by DoSelectPage and DoPrintPage
                 to generate a (potentially multi-page) numbered list from a
                 file.
@@ -125,7 +146,7 @@ ListerPrintPage Used by DoLister. Displays the selected page, then waits for the
                 DoLister as global in scope
                 Sets $GlobalInt to the user input (item number)
                 and $GlobalChar to the detail of the menu item.
-------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 DoMega          Generates a (potentially multi-page) numbered list from a file
                 of crude data prepared by the calling program.
                 Parameters:
@@ -133,29 +154,6 @@ DoMega          Generates a (potentially multi-page) numbered list from a file
                 $2 Search term; $3 ignore (y/n)
 MegaPage        Does the actual printing bit for DoMega.
                 Parameters: $1 pageNumber; $2 pages; $3 display; $4 items; $5 counter
-------------------------------------------------------------------------------
-DoRadio         Prints up to four columns of radio buttons. The user moves the cursor
-                using the cursor keys, and marks one button in each column by pressing 'x'
-                Parameters:
-                $1 Headline text; $2 (and optional $3, $4 & $5) prompt text for the radio
-                buttons (strings of space-separated one-word prompts).
-                The first item in each of $2, $3, $4 & $5 are column headings (required)
-                Sets GlobalChar with the position of the selected item in each column
-                (eg: 4 1 5 2) You can then relate each number to the original string
-                variable using the DoEnum function.
-RadioColumn     Handles printing of one column, its header and the items in it.
-                Parameters (all generated and passed by DoRadio):
-                $1 items; $2 total columns; $3 this column (1 to 3)
-                $4 startpoint $5 longest
-RadioSelect     Highlights the top radio button of the first column, then the next one as
-                the cursor is moved vertically. Switches columns according to horizontal
-                cursor movement. Marks an item as selected or deselected if the user
-                presses 'x'. Also unmarks a previously selected item in the column if the
-                user selects a different one.
-                Parameters (all generated and passed by DoRadio):
-                $1 number of columns (to monitor column switching) generated by DoRadio;
-                $2 firstpoint (initially column1)
-                $3 a string containing the lengths of the longest items in each column
-                $4 a string containing the number of items in each column
-------------------------------------------------------------------------------
-(revision 210512 Elizabeth Mills May 2021)
+
+-----------------------------------------------------------------------------------------
+(revision 210513 Elizabeth Mills May 2021)

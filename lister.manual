@@ -1,9 +1,8 @@
 Using the lister functions - Elizabeth Mills
 
-Revision 210512 May 2021
+Revision 210513 May 2021
 
-NOTE:   Many recent additions and changes in Lister mean that this manual is not up to
-        date. I will update it as soon as my workload goes down.        
+NOTE:   Recently updated. Please let me know if you find any errors.        
 
 The scripts described herein are shared in the hope that they will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
@@ -16,64 +15,143 @@ General Public License is available from the lister page at: https://github.com/
 
 Introduction
 ------------
-The philosophy behind lister.sh was conceived as part of the independent Feliz installation
-script for the Arch Linux operating system. There was a need for a 'friendlier' display of
-information and getting user input, but it had to be light and self-contained, because of
+Originally conceived as part of the independent Feliz installation script for the Arch 
+Linux distribution, Lister was born from a need for a 'friendlier' way to display
+information and get user input - but it had to be light and self-contained, because of
 the constraints of running the script in the Arch Linux live session. At that time, the
-module was called 'Listgen', but it has changed completely since those days, and all the
-functions have been rewritten and renamed, so a name change seems appropriate. Feliz is no
-longer maintained, so Lister is now an independent project. It is written entirely in
-bash, and is open-source, so you can edit it to suit your purposes. 
+project was called 'Listgen' but it has changed completely since those days - new 
+functions have been added, and the original functions have been rewritten and renamed -
+so a fresh name seems appropriate. Lister is now an independent project. It is written
+entirely in Bash, and is open-source, so you can incorporate as much as you want, and
+edit it to suit your purposes. 
 
 In this guide, aimed at intermediate scripters, I will explain how the functions in the
 lister.sh module can be incorporated to help you to improve the display of information
 while running your own scripts.
 
 The Lister module is self-contained and application-independent. It initialises all its
-own variables, and contains all the functions it needs; any of the functions may be called
-from any scripts. You only have to put a copy of lister.sh in the same location as your
-scripts, and source it, to be able to add all the features of lister to your scripts.
+own variables, and contains all the functions it needs; any of the functions may be 
+called from any scripts. You only have to put a copy of lister.sh in the same location 
+as your scripts, and source it, to be able to add all the features to your own scripts.
 
 Some of the functions share the outcome of their processes via the two global variables
-GlobalChar and GlobalInt, for returning text or numeric results, respectively. One other
-global variable is used - GlobalCursorRow - which tracks vertical alignment. All other
-variables are local to their functions, and values are passed as parameters between them.
+GlobalChar and GlobalInt, for returning text or numeric results respectively. Two other
+global variables are used - GlobalCursorRow - which tracks vertical alignment, and a 
+global constant, BackTitle. All other variables are local to their functions, and values
+are passed as parameters between them.
 
-About the lister.sh functions
+About the Lister functions
 -----------------------------
-This project is designed to help with creating intuitive cli interfaces without using
-Dialog, Whiptail, or any other external package, especially for situations where other
-'box' systems are not available, or where resources are tight. Instead, it uses the
-tput library to determine the terminal dimensions and to display lists and text centrally
-according to content. Unlike the others, Lister does not draw boxes, and has no colours.
+Lister uses the tput library to determine the terminal dimensions and to position the
+lists, menus and other active text centrally according to their content. Unlike Dialog,
+Zenity, Yad, etc, Lister does not draw boxes, and has no colours.
 
-The functions are named distinctively, so that they stand out in your code. These are the
-ones that you will likely call directly:
-    DoForm        A form for user input;
-    DoMessage     A message (for information or error-reporting) with an 'Ok' button;
-    DoMenu        Generates a menu of one-word items;
-    DoLongMenu    Generates a menu of multi-word items;
-    DoLister      Prints one or more pages of numbered items in columns;
-    DoMega        Prints one or more pages of numbered items that are as wide as the window.
+The functions that you will likely call directly are named distinctively, all prefixed 
+with Do.... so that they are easy to remember and stand out in your code:
 
-The following functions  in lister.sh are used by the other functions:
-    DoHeading     Prepares a blank window with a heading;
-    DoFirstItem   Prints one line of text, centralised on the page;
-    DoNextItem    Prints successive items, aligned to the first;
-    DoButtons     Prints a button or row of buttons (currently limited to two);
-    DoPrintRev    Reverses (ie: highlights) text colour for selected menu item and/or button;
-    DoActiveMenu  Controls the selection and highlighting of menu items;
-    DoSelectPage  Selects an appropriate page of data according to user input;
-    DoPrintPage   Displays one page of a list, fitting as many columns as possible in the window;
-    DoMegaPage    Prints the pages prepared by DoMega.
+General-purpose functions
+    DoHeading         Prepare a new window with heading;
+    DoForm            Centred prompt for user-entry;
+    DoMessage         Displays an error message in a pop-up terminal;
+    DoEnum            Enumerate a string;
+    DoYesNo           Yes, it's a yes/no function.
+
+Functions that display and manage menus or lists
+    DoMenu            Generates a simple menu of one-word items;
+    DoLongMenu        Generates a menu of multi-word items;
+    DoFirstItem       Prints a single, centred item;
+    DoNextItem        Prints successive aligned items;
+    DoPrintRev        Reverses text colour at appointed position;
+    DoKeypress        Respond to keypress;
+    DoLister          Generates a numbered list of one-word items in columns;
+    DoMega            Prints pages full of extra long text, trimmed to fit the terminal;
+    DoRadio           Prints up to four columns of user-prompts with 'one only' buttons.
+
+The remaining functions in the lister.sh script are used by some or all of the others.
+They are not intended for direct use in your programs.
+    PrintButtons      Prints one or two buttons;
+    SwitchButtons     Alternate between two buttons;
+    ListerSelectPage  Used by DoLister to manage page handling;
+    ListerPrintPage   Used by DoLister to display selected page;
+    MegaPage          Does the printing for DoMega;
+    RadioColumn       Prints all the columns for DoRadio, with 'buttons';
+    RadioSelect       Responds to user input, moves the cursor, & manages the 'buttons'.
+
+The Lister functions share four global variables. The names of all global variables in
+Lister start with an upper-case letter, and any subsequent word is also capitalised:
+1) BackTitle       A constant, set near the start of your program;
+2) GlobalChar      Used from within functions to export text;
+3) GlobalInt       Used from within functions to export numeric values;
+4) GlobalCursorRow Shared between all Lister functions and your own code to track position.
+
+As functions in Lister are also global in scope, they too are named with leading capitals.
+
+All variables within all funtions in Lister are declared as local, and are named with all
+lower-case letters (and occasionally a number). All arrays are local, and their names are
+also lower-case.
+
 -----------------------------------------------------------------------------------------
-A simple example, using the 'DoMessage' function
-------------------------------------------------
-A call to DoMessage passes only one parameter:  $1 The text to be displayed; 
+First, the simple ones ...
+-----------------------------------------------------------------------------------------
+DoHeading: Prepares the page you want to display. Make this the first step for every page.
 
-Use it like this:   DoMessage "The file has been updated."
+It requires no parameters, just call it with: DoHeading
 
-DoMessage opens a terminal (xterm) with the message, and waits for the user to press [Enter]
+DoHeading clears the visible area of the terminal and prints a heading. The heading comes
+from the global variable 'BackTitle' if set.
+
+DoHeading measures the terminal size, and centres BackTitle on the top row (row zero).
+It then sets the row counter GlobalCursorRow to 1 and returns 0 through $?.
+It's up to you to maintain GlobalCursorRow in your own code after that.
+
+-----------------------------------------------------------------------------------------
+DoForm: Prints a centred prompt, then waits for the user to enter data.
+
+Expects one parameter:  A short text message to instruct the user ...
+
+DoForm "Please type your name: "
+
+Sets $GlobalChar with the text entered by the user.
+
+-----------------------------------------------------------------------------------------
+DoMessage: Displays a message in a pop-up terminal (xterm) then waits for the user to
+press [Enter]. Can be used for error reporting or important information.
+
+One required parameter - a text message - with the option of a second ...
+
+DoMessage "First line of a message" "Optional second line"
+
+The xterm window closes on user [Enter]. No variables are set by DoMessage.
+
+-----------------------------------------------------------------------------------------
+DoEnum: Bash has no 'enum' variable type, so this simple Lister function makes it easy to
+enumerate any string variable.
+
+DoEnum "One Two Three Four Five Six" "Four" ...
+Returns the position of 'Four' in the string using the Bash 'return' variable ($?);
+
+DoEnum "One Two Three Four Five Six" 3 ...
+Returns the 3rd word in the string using the GlobalChar variable;
+
+DoEnum "One Two Three Four Five Six" ...
+With no second parameter, DoEnum returns the total count of words in the string, using the
+Bash 'return' variable ($?)
+
+-----------------------------------------------------------------------------------------
+DoYesNo: Yes, it's a really simple yes/no function.
+
+It takes one parameter, a short line of text to which the answer can be yes or no ...
+
+DoYesNo "Would you like a doughnut?"
+
+Prints the message, followed by a pair of buttons labelled [Yes] [No] and text saying:
+"Use cursor keys to move, [Enter] to select.
+
+Sets the Bash return code $? to 1 (yes) or 2 (no) ... and ...
+the global variable $GlobalChar to 'Yes' or 'No'.
+
+-----------------------------------------------------------------------------------------
+Now the more complex stuff ...
 -----------------------------------------------------------------------------------------
 DoMenu
 ------
@@ -82,28 +160,29 @@ interactive menu. It prints the list of options provided, in the form of a scrol
 with a pair of 'buttons' to confirm or exit.
 
 Parameters:
-$1 String of single-word menu items, or the name of a file containing those items ...
+1) String of single-word menu items, or the name of a file containing those items ...
       (max 15 advised, as we don't want to go off the screen, do we?);
-$2 Button text, eg: 'Ok Exit' or just 'Ok' (these must be single-word options).
+2) Button text, eg: 'Ok Exit' or just 'Ok' (these must be single-word options).
    If only one word is passed (eg: 'Ok') then no exit option will be printed.
    In this way you can make sure that your users pick one of the menu items offered;
-$3 Optional prompt message, or can be empty.
+3) Optional prompt message, or can be empty.
 
 Example call:   DoMenu "Sing Dance Act" "Ok Exit"
 
-The first (string array) argument may be passed in one of three ways:
-1) It may be specified in the calling line (as above):
-	    DoMenu "item1 item2 item3 ... "
-2) It may be assigned to a variable:
-	    VariableName="item1 item2 item3 ... "
-	    For example ...
-      	Accessories="Conky Geany Nautilus Terminator"
-	      DoMenu "$Accessories"
-3) It may be generated by a bash command ...
-      	For example …
-	        Partitionlist=$(lsblk -l | grep 'part')
-	        DoMenu "$Partitionlist" "Ok Done"
-        Note: A bash-generated list should be converted to a string array. For example:
+The first (string) argument may be passed in one of three ways:
+    1) It may be specified in the calling line (as above):
+            DoMenu "item1 item2 item3 ... "
+    2) It may be assigned to a variable:
+            VariableName="item1 item2 item3 ... "
+            For example ...
+            Accessories="Conky Geany Nautilus Terminator"
+            DoMenu "$Accessories"
+    3) It may be generated by a bash command ...
+            For example …
+                Partitionlist=$(lsblk -l | grep 'part')
+                DoMenu "$Partitionlist" "Ok Done"
+            
+       Note: A bash-generated list should be converted to a string. For example:
             Zones=(`timedatectl list-timezones | sed 's/\/.*$//' | uniq`)
             passzones=""
             for z in ${Zones[@]}; do
@@ -112,11 +191,12 @@ The first (string array) argument may be passed in one of three ways:
             ...
             DoMenu "${passzones}" "Select Exit"
             
-DoMenu sets two global variables for use by the calling function ...
-1) $GlobalInt - the item number selected by the user, and
-2) $GlobalChar - the label (from the variable array) of the item selected.
+DoMenu sets the two global variables for use by the calling function ...
+    1) GlobalInt - the item number selected by the user, and
+    2) GlobalChar - the label (from the variable array) of the item selected.
 This means that you can respond to the user input by using (for example) a 'case - esac'
 statement or an 'if - else - fi' statement.
+
 -----------------------------------------------------------------------------------------
 DoLongMenu
 ----------
@@ -129,49 +209,48 @@ its own line in the file (no more than 20 items), and the file name must be pass
 first parameter, before it can be used.
 
 Parameters:
-$1 The name of the file containing the verbose menu items;
-$2 Optional button text, eg: 'Ok Exit'
-   (if empty will default to 'Ok Exit');
-$3 Optional message
-   (if $3 is required, $2 must be passed, even if null);
-     Notes:
-     DoLongMenu requires the named file to exist, or it will abort.
-     The named file containing the verbose menu items ...
-        1) Should have one item to a line; 
-        2) Each line no longer than 50 characters, and ...
-        3) No more than 20 items
-              (we don't want to go off the screen, do we?)
+    1) The name of the file containing the verbose menu items;
+           The named file must exist, or DoLongMenu will abort.
+           The named file ...
+              1) Must have one item to a line; 
+              2) Each line no longer than 50 characters, and
+              3) No more than 20 items (we don't want to go off the screen, do we?)
+    2) Optional button text, eg: 'Ok Exit' (if empty will default to 'Ok Exit');
+    3) Optional message (if $3 is required, $2 must be passed, even if null);
 
-Calling DoLongMenu may take the form:       DoLongMenu "file.name" "Ok Exit" ""
+Calling DoLongMenu may take the form ...
+
+    DoLongMenu "file.name" "Ok Exit" ""
+
 DoLongMenu returns the same global variables as DoMenu.
 -----------------------------------------------------------------------------------------
 DoLister
 -------
-DoLister differs from the other two in that, instead of a cursor-driven menu, it generates
-a numbered list from which the user can choose by entering the number displayed next to
-the item. This is provided for situations where a large number of options is to be offered,
-and a menu would scroll off the screen. Because DoLister must redraw the screen for each
-pageful of data to be displayed, it must provide all the text the user needs for advice
-and prompting. In order to simplify the calling code, DoLister uses a default set of
-instructions to the user.
+DoLister differs from the two menu functions in that, instead of a cursor-driven menu, it
+generates a numbered list from which the user can choose by entering the number displayed
+next to the item. This is provided for situations where a large number of options is to be
+offered, and a menu would scroll off the screen. Because DoLister must redraw the screen
+for each pageful of data to be displayed, it must provide all the text the user needs for
+advice and prompting. In order to simplify the calling code, DoLister uses a default set
+of instructions to the user.
 
 The calling function must generate a file containing all the items to be displayed. The
 items in the file must be only one word each, and must be one to a line.
 
 The file may be generated in any way that produces the list you want to use:
-1) It may be passed directly:
-    eg: printf "%-s\n" "item1" "item2" "item3" > input.file
-2) It may be generated in a loop, eg: 
-    for i in names.list
-    do
-      echo $i >> input.file
-    done
-3) It may be generated by a bash command ...
-      eg: lsblk -l | grep 'part' > input.file
+    1) It may be passed directly:
+        eg: printf "%-s\n" "item1" "item2" "item3" > input.file
+    2) It may be generated in a loop, eg: 
+        for i in names.list
+        do
+          echo $i >> input.file
+        done
+    3) It may be generated by a bash command ...
+          eg: lsblk -l | grep 'part' > input.file
 
-The calling function sends only one parameter:
-      $1 The name of the file containing the items.
-      So it is, simply: DoLister "file.name"
+The calling function sends only one parameter: The name of the file containing the items.
+
+So it is, simply: DoLister "file.name"
     
 The items are printed on the screen in columns, neatly centred, as many as will comfortably
 fit the window, with a number next to each item. At the top of the screen, the message
@@ -184,10 +263,43 @@ displayed - only valid options are suggested. Finally, there is a line of prompt
 with the cursor flashing, waiting for user entry.
 
 DoLister sets the same global output variables as DoMenu and DoLongMenu
------------------------------------------------------------------------------------------
-Recently added, DoMega is for displaying extra long lines of text from a data file. It
-trims them to fit the page, and DoMegaPage prints a pageful so you can choose one. DoMega
-takes three parameters:
-    $1 Name of the file containing all the items; $2 Message; $3 Message
 
-    
+-----------------------------------------------------------------------------------------
+DoMega: Generates a (potentially multi-page) list from a file of crude data prepared by
+the calling program.
+
+DoMega trims the text to fit the page, numbers each one, and prints a pageful at a time
+for the user to choose one by entering its number, or to look at the next/previous page.
+
+Parameters:
+    1)  The name of the file containing all the items;
+    2)  One line of information to print above the list
+
+    DoMega "file.name" "All this stuff came from '$file.name'"
+
+All other prompts are managed by DoMega.
+
+Returns the item text via GlobalChar and the item number via $?
+
+-----------------------------------------------------------------------------------------
+DoRadio:    Prints up to four columns of radio buttons. The user moves the cursor using
+            the cursor keys, and marks one button in each column by pressing 'x'
+                
+Takes up to five parameters:
+    1) Some headline text;
+    2)  (and optional $3, $4 & $5) Prompt text for the radio buttons. These are strings of
+        space-separated one-word prompts, the first which must be the column heading.
+        DoRadio will treat the first item in each string as a column heading, so remember
+        tom include it.
+                  
+For one column, just include $1 (the headline message) and $2 (the column) ...
+   DoRadio "Please choose delivery day" "-Weekdays- Monday Tuesday Wednesday Thursday Friday"
+
+Or, for (say) two columns, just add the extra parameter ...
+    DoRadio "When shall we phone you?" "~Weekdays~ Monday Tuesday Wednesday Thursday Friday" "~Time~ AM PM"
+
+DoRadio reports via GlobalChar, with the position of the selected item in each column.
+For example (using the above two columns) $GlobalChar might report: 4 2
+These are in the same order as the parameters were sent. You can then relate each number
+to the original string variables using the DoEnum function to extract the item name, in
+this example: Thursday, PM.

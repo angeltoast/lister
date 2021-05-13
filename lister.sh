@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Developed by Elizabeth Mills
-# Revision 210512
+# Revision 210513
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,11 +28,11 @@
 # -------------------------------------------------------------
 # DoHeading          63  Prepare a new window with heading
 # DoForm             86  Centred prompt for user-entry
-# DoMessage         103  Prints a message with Ok button
-# DoButtons         108  Prints one or two buttons
-# DoSwitchButtons   157  Alternate buttons
+# DoMessage         103  Displays an error message in a pop-up terminal
+# PrintButtons      108  Prints one or two buttons
+# SwitchButtons     157  Alternate between two buttons
 # DoEnum            168  Enumerate a string
-# DoYesNo           205  Yes, a yes/no function
+# DoYesNo           205  Yes, it's a yes/no function
 # -------------------------------------------------------------
 #       Menus .. Displaying and using menus
 # -------------------------------------------------------------
@@ -51,7 +51,7 @@
 # DoMega            884 Pages full of extra long text, trimmed to fit
 # MegaPage          933 Does the printing for DoMega
 # DoRadio          1009 Accepts input of up to four columns of user-prompts
-# RadioColumn 1118 Prints all the columns with 'radio buttons'
+# RadioColumn      1118 Prints all the columns, with 'radio buttons'
 # RadioSelect      1152 Responds to user input via cursor keys
 # ---------------------------------------------------------------
 
@@ -69,7 +69,7 @@ function DoHeading    # Always use this function to prepare the screen
     
     local winwidth limit text textlength startpoint
     winwidth=$(tput cols)                           # Recheck window width  
-    text="$Backtitle"                               # Use Global variable
+    text="$BackTitle"                               # Use Global variable if set
     textlength=$(echo $text | wc -c)                # Count characters
       
     if [ $textlength -ge $winwidth ]; then          # If text too long for window
@@ -103,12 +103,12 @@ function DoForm    # Centred prompt for user-entry
     read -p "$1" GlobalChar
 } # End DoForm
 
-function DoMessage    # Display a message with an 'Ok' button to close
+function DoMessage    # Display an error message in a pop-up terminal
 {                     # $1 and $2 optional lines of message text
     xterm -T " Error" -geometry 90x10+300+250 -fa monospace -fs 10 -e "echo '$1' && echo '$2' && read -p 'Please press [Enter] ...'"
 } # End DoMessage
 
-function DoButtons
+function PrintButtons
 {   # $1 Button text; $2 Highlight one of the buttons; $3 buttonRow
     # Button string should contain one or two words: eg: 'Ok' or 'Ok Exit'
    
@@ -155,9 +155,9 @@ function DoButtons
     printf "%-s\\n" "$button2string"            # Print button2
     tput sgr0 	                                # Reset colour
     return $selected
-} # End DoButtons
+} # End PrintButtons
 
-function DoSwitchButtons       # $1 = Selected button
+function SwitchButtons       # $1 = Selected button
 {
     local selected
     if [ $1 -eq 1 ]; then  # Switch buttons
@@ -166,7 +166,7 @@ function DoSwitchButtons       # $1 = Selected button
         selected=1
     fi
     return $selected
-} # End DoSwitchButtons
+} # End SwitchButtons
 
 function DoEnum # Enumerate a word from a string variable
 {               # $1 String of space-separated one-word items
@@ -217,12 +217,12 @@ function DoYesNo    # A yes/no function
     selected=1
     while true
     do
-        DoButtons "Yes No" $selected $GlobalCursorRow
+        PrintButtons "Yes No" $selected $GlobalCursorRow
         DoKeypress
         if [ $GlobalInt -eq 0 ]; then   # User pressed [Enter]
             break
         fi
-        DoSwitchButtons $selected
+        SwitchButtons $selected
         selected=$?
     done
     GlobalChar="$(echo 'Yes No' | cut -d' ' -f ${selected})"
@@ -310,7 +310,7 @@ function DoMenu  # Simple menu
     buttonRow=$((GlobalCursorRow+1))
     selected=1
     selectedbutton=1
-    DoButtons "$buttontext" $selectedbutton $buttonRow
+    PrintButtons "$buttontext" $selectedbutton $buttonRow
 
     while true          # The cursor key action will change either the
     do                  # hightlighted menu item or one of the buttons
@@ -371,9 +371,9 @@ function DoMenu  # Simple menu
             DoPrintRev "$startpoint" "$longest" "$name"
         ;;
         4|2) # Right or left - button action, not a menu action     
-            DoSwitchButtons $selectedbutton
+            SwitchButtons $selectedbutton
             selectedbutton=$?
-            DoButtons "$buttontext" $selectedbutton $buttonRow
+            PrintButtons "$buttontext" $selectedbutton $buttonRow
         ;;
         *) continue   # Do nothing
         esac
@@ -452,7 +452,7 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
     DoFirstItem "Use cursor keys to navigate"
     buttonrow=$((GlobalCursorRow)); selected=1; selectedbutton=1
    
-    DoButtons "$buttontext" $selectedbutton $buttonrow
+    PrintButtons "$buttontext" $selectedbutton $buttonrow
     
     while true          # The cursor key action will change either the hightlighted
     do                  # menu item or one of the buttons.
@@ -510,9 +510,9 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
             DoPrintRev "$startpoint" "$longest" "$description"
         ;;
         4|2) # Right or left - button action, not a menu action     
-            DoSwitchButtons $selectedbutton
+            SwitchButtons $selectedbutton
             selectedbutton=$?
-            DoButtons "$buttontext" $selectedbutton $buttonrow
+            PrintButtons "$buttontext" $selectedbutton $buttonrow
         ;;
         *) continue   # Do nothing
         esac
@@ -807,7 +807,7 @@ function ListerPrintPage      # Prints the page prepared and selected in ListerS
     winHeight=$1; winCentre=$2; instrLen=${#3}; instructions="$3"
     pageNumber="$4"; lastItem="$5"; counter=1
 
-    DoHeading $Backtitle                          # Prepare window
+    DoHeading $BackTitle                          # Prepare window
     DoFirstItem "Page $pageNumber of $lastPage"
 
     thisPage="${GlobalPagesArray[${pageNumber}]}" # Get column numbers for this page
@@ -998,9 +998,9 @@ function MegaPage     # The actual printing bit
         *[!0-9]*) continue                      # Other characters that are not numbers
         ;;
         *)  # A number was entered
-            counter="$GlobalChar"   # Convert char to int and use to find the item in the file
+            counter="$GlobalChar"  # Convert char to int & use to find the item in the file
             GlobalChar="$(head -n ${counter} mega-work.file | tail -n 1)"
-            return 0
+            return $counter
         esac
         counter=$(((pageNumber*display)+1-display))
     done
@@ -1112,8 +1112,8 @@ function DoRadio {  # A function to print up to four columns of radio buttons. T
 } # End DoRadio
 
 function RadioColumn { # Handle printing of one column, its header and the items in it
-                            # $1 items; $2 total columns; $3 this column (1 to 3)
-                            # $4 startpoint $5 longest
+                            # $1 items; $2 total columns (1 to 4);
+                            # $3 this column (1 to 4); $4 startpoint $5 longest
     local list columns column longest width
     local item i items savecursorrow startpoint
 
