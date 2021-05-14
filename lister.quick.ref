@@ -38,13 +38,15 @@ DoRadio         Prints up to four columns of radio buttons. The user moves the c
                 Sets GlobalChar with the position of the selected item in each column
                 (eg: 4 1 5 2) You can then relate each number to the original string
                 variable using the DoEnum function.
-RadioColumn     Handles printing of one column - the header, the items in it, and the buttons.
+RadioColumn     (Used by DoRadio - Not intended for direct access by external processes)
+                Handles printing of one column - the header, the items in it, and the buttons.
                 Parameters (all generated and passed by DoRadio):
                 $1 items in this column; $2 total number of columns;
                 $3 the number of the current column to be printed (1 to 4)
                 $4 The startpoint (how many characters in from the left;
                 $5 The length of the longest item in the current column.
-RadioSelect     Highlights the top radio button of the first column, then the next one as
+RadioSelect     (Used by DoRadio - Not intended for direct access by external processes)
+                Highlights the top radio button of the first column, then the next one as
                 the cursor is moved vertically. Switches columns according to horizontal
                 cursor movement. Marks an item as selected or deselected if the user
                 presses 'x'. Also unmarks a previously selected item in the column if the
@@ -83,14 +85,16 @@ DoLongMenu      Generates a menu of multi-word items.
                           (we don't want to go off the screen, do we?)
                 Sets the return code $? to the number in the menu of the item
                 selected.
-PrintButtons    Used by the menu functions. Prints a row of buttons
+PrintButtons    (Used by the menu functions - Not intended for access by external processes)
+                Prints a row of buttons.
                 Parameters: 
                 $1 Button text (eg: "Ok" for one button, or "Yes No" for two; 
                 $2 Which button to highlight (numeric: 1=left or 2=right);
                 $3 The row of the window on which the buttons are to be printed:
                      (this should normally be within the range 0 to 24);
                 Sets the return code $? to the number of the button selected.
-SwitchButtons   Alternates between two buttons
+SwitchButtons   (Used by the menu functions - Not intended for access by external processes)
+                Alternates between two buttons
                 Parameter: Number of the currently selected button
 -----------------------------------------------------------------------------------------
 DoFirstItem     Prints a single item, centred, at the top of the page.
@@ -103,8 +107,9 @@ DoNextItem      Prints the next item of a menu
                 $1 startpoint; $2 Item text.
                 Sets $GlobalCursorRow for any successive print instructions.
 -----------------------------------------------------------------------------------------
-DoPrintRev      Prints a menu item in reverse text colour ...
-                      (matched to the length of the longest item in the menu).
+DoPrintRev      Prints an item in reverse text colour, matched to the length of the longest
+                item in the menu. Used by DoMenu and DoLongMenu, but also available for
+                other uses.
                 Parameters:
                 $1 Startpoint (horizontal position of the first character);
                 $2 Length of the longest menu item (in characters);
@@ -130,16 +135,18 @@ DoLister        Prepares arrays for use by DoSelectPage and DoPrintPage
                 The file must have one word per item, one item per line.
                 Returns: No values are set by DoLister itself (return values
                 are set by DoPrintPage)
-ListerSelectPage  Used by DoLister to manage page handling.
+ListerSelectPage (Used by DoLister to manage page handling - Not intended for direct
+                access by external processes)
                 The arrays used here are declared and initialised in
                 DoLister as global in scope.
                 Parameters (all set by DoLister):
                 $1 = winHeight; $2 = winCentre; $3 lastPage;
                 Returns: No values are set by DoSelectPage (return values are
                 set by DoPrintPage)
-ListerPrintPage Used by DoLister. Displays the selected page, then waits for the user
-                to enter a number. The items are printed in columns.
-                Parameters (all set by DoSelectPage):
+ListerPrintPage (Used by DoLister - Not intended for direct access by external processes)
+                Displays the selected page, then waits for the user to enter a number. The
+                items are printed in columns.
+                Parameters (all set by ListerSelectPage):
                 $1 winHeight; $2 winCentre; $3 instructions;
                 $4 pageNumber; $5 lastItem
                 The arrays used here are declared and initialised in
@@ -152,8 +159,9 @@ DoMega          Generates a (potentially multi-page) numbered list from a file
                 Parameters:
                 $1 Name of the file containing all the items;
                 $2 Search term; $3 ignore (y/n)
-MegaPage        Does the actual printing bit for DoMega.
+MegaPage        (Used by DoMega - Not intended for direct access by external processes)
+                Does the actual printing bit for DoMega.
                 Parameters: $1 pageNumber; $2 pages; $3 display; $4 items; $5 counter
 
 -----------------------------------------------------------------------------------------
-(revision 210513 Elizabeth Mills May 2021)
+(revision 210514 Elizabeth Mills)
