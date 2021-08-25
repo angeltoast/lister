@@ -1,6 +1,6 @@
 Using the lister functions - Elizabeth Mills
 
-Revision 210513 May 2021
+Revised 2021/08/25 for v2.00
 
 NOTE:   Recently updated. Please let me know if you find any errors.        
 
@@ -17,13 +17,13 @@ Introduction
 ------------
 Originally conceived as part of the independent Feliz installation script for the Arch 
 Linux distribution, Lister was born from a need for a 'friendlier' way to display
-information and get user input - but it had to be light and self-contained, because of
-the constraints of running the script in the Arch Linux live session. At that time, the
-project was called 'Listgen' but it has changed completely since those days - new 
-functions have been added, and the original functions have been rewritten and renamed -
-so a fresh name seems appropriate. Lister is now an independent project. It is written
-entirely in Bash, and is open-source, so you can incorporate as much as you want, and
-edit it to suit your purposes. 
+information and get user input via the command line - but it had to be light and 
+self-contained, because of the constraints of running the script in the Arch Linux live
+session. At that time, the project was called 'Listgen' but it has changed completely 
+since those days - new functions have been added, and the original functions have been
+rewritten and renamed - so a fresh name seems appropriate. Lister is now an independent
+project. It is written entirely in Bash, and is open-source, so you can incorporate as 
+much as you want, and edit it to suit your purposes. 
 
 In this guide, aimed at intermediate scripters, I will explain how the functions in the
 lister.sh module can be incorporated to help you to improve the display of information
@@ -35,10 +35,8 @@ called from any scripts. You only have to put a copy of lister.sh in the same lo
 as your scripts, and source it, to be able to add all the features to your own scripts.
 
 Some of the functions share the outcome of their processes via the two global variables
-GlobalChar and GlobalInt, for returning text or numeric results respectively. Two other
-global variables are used - GlobalCursorRow - which tracks vertical alignment, and a 
-global constant, BackTitle. All other variables are local to their functions, and values
-are passed as parameters between them.
+Gstring and Gnumber, for returning text or numeric results respectively. Two other
+global variables are used - Grow - which tracks vertical alignment, Gcol - for horizontal text alignment, and a global constant, BackTitle. All other variables are local to their functions, and values are passed as parameters between them.
 
 About the Lister functions
 -----------------------------
@@ -79,10 +77,11 @@ They are not intended for direct use in your programs.
 
 The Lister functions share four global variables. The names of all global variables in
 Lister start with an upper-case letter, and any subsequent word is also capitalised:
-1) BackTitle       A constant, set near the start of your program;
-2) GlobalChar      Used from within functions to export text;
-3) GlobalInt       Used from within functions to export numeric values;
-4) GlobalCursorRow Shared between all Lister functions and your own code to track position.
+1) BackTitle       		A constant, set near the start of your program;
+2) Gstring      			Used from within functions to export text;
+3) Gnumber       			Used from within functions to export numeric values;
+4) Grow 							Shared between all Lister functions and your own code to track the
+5) Gcol								position of the cursor.
 
 As functions in Lister are also global in scope, they too are named with leading capitals.
 
@@ -101,8 +100,8 @@ DoHeading clears the visible area of the terminal and prints a heading. The head
 from the global variable 'BackTitle' if set.
 
 DoHeading measures the terminal size, and centres BackTitle on the top row (row zero).
-It then sets the row counter GlobalCursorRow to 1 and returns 0 through $?.
-It's up to you to maintain GlobalCursorRow in your own code after that.
+It then sets the row counter Grow to 1 and returns 0 through $?.
+It's up to you to maintain Grow and Gcol in your own code after that.
 
 -----------------------------------------------------------------------------------------
 DoForm: Prints a centred prompt, then waits for the user to enter data.
@@ -111,7 +110,7 @@ Expects one parameter:  A short text message to instruct the user ...
 
 DoForm "Please type your name: "
 
-Sets $GlobalChar with the text entered by the user.
+Sets $Gstring with the text entered by the user.
 
 -----------------------------------------------------------------------------------------
 DoMessage: Displays a message in a pop-up terminal (xterm) then waits for the user to
@@ -131,7 +130,7 @@ DoEnum "One Two Three Four Five Six" "Four" ...
 Returns the position of 'Four' in the string using the Bash 'return' variable ($?);
 
 DoEnum "One Two Three Four Five Six" 3 ...
-Returns the 3rd word in the string using the GlobalChar variable;
+Returns the 3rd word in the string using the Gstring variable;
 
 DoEnum "One Two Three Four Five Six" ...
 With no second parameter, DoEnum returns the total count of words in the string, using the
@@ -148,7 +147,7 @@ Prints the message, followed by a pair of buttons labelled [Yes] [No] and text s
 "Use cursor keys to move, [Enter] to select.
 
 Sets the Bash return code $? to 1 (yes) or 2 (no) ... and ...
-the global variable $GlobalChar to 'Yes' or 'No'.
+the global variable $Gstring to 'Yes' or 'No'.
 
 -----------------------------------------------------------------------------------------
 Now the more complex stuff ...
@@ -192,8 +191,9 @@ The first (string) argument may be passed in one of three ways:
             DoMenu "${passzones}" "Select Exit"
             
 DoMenu sets the two global variables for use by the calling function ...
-    1) GlobalInt - the item number selected by the user, and
-    2) GlobalChar - the label (from the variable array) of the item selected.
+    1) Gnumber - the item number selected by the user, and
+    2) Gstring - the label (from the variable array) of the item selected.
+It sets the function return code $? to the number of the button selected.
 This means that you can respond to the user input by using (for example) a 'case - esac'
 statement or an 'if - else - fi' statement.
 
@@ -202,7 +202,7 @@ DoLongMenu
 ----------
 This is designed for displaying longer descriptions in a menu format. It receives the text
 of the long items via a file. When an item is selected by the user, lister2 finds that
-item in the file, and saves it as the global variable $GlobalChar which may then be used
+item in the file, and saves it as the global variable $Gstring which may then be used
 by the calling function if desired. Although complex to set up, it adds greater
 functionality and user-friendliness for menus. The file must exist, must have each item on
 its own line in the file (no more than 20 items), and the file name must be passed as the
@@ -222,7 +222,7 @@ Calling DoLongMenu may take the form ...
 
     DoLongMenu "file.name" "Ok Exit" ""
 
-DoLongMenu returns the same global variables as DoMenu.
+DoLongMenu sets the same global variables, and the same return value, as DoMenu.
 -----------------------------------------------------------------------------------------
 DoLister
 -------
@@ -279,7 +279,7 @@ Parameters:
 
 All other prompts are managed by DoMega.
 
-Returns the item text via GlobalChar and the item number via $?
+Returns the item text via Gstring and the item number via $?
 
 -----------------------------------------------------------------------------------------
 DoRadio:    Prints up to four columns of radio buttons. The user moves the cursor using
@@ -298,8 +298,8 @@ For one column, just include $1 (the headline message) and $2 (the column) ...
 Or, for (say) two columns, just add the extra parameter ...
     DoRadio "When shall we phone you?" "~Weekdays~ Monday Tuesday Wednesday Thursday Friday" "~Time~ AM PM"
 
-DoRadio reports via GlobalChar, with the position of the selected item in each column.
-For example (using the above two columns) $GlobalChar might report: 4 2
+DoRadio reports via Gstring, with the position of the selected item in each column.
+For example (using the above two columns) $Gstring might report: 4 2
 These are in the same order as the parameters were sent. You can then relate each number
 to the original string variables using the DoEnum function to extract the item name, in
 this example: Thursday, PM.

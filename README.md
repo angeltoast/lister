@@ -10,4 +10,10 @@ The interfaces provided by **Lister** are intentionally more basic than Dialog a
 
 The **Lister** module is self-contained and application-independent. It initialises all its own variables, and contains all the functions it needs; any of the functions may be called independently from any scripts. You only have to put a copy of the lister.sh module in the same location as your scripts, and source it, to be able to add all the features of **Lister** to your scripts.
 
-(revision 210514 Elizabeth Mills)
+As of 2021/08/25 **Lister** has been assigned version 2.00 following changes to the global variables used to communicate with other applications, making it incompatible with applications written to use any previous versions. These changes are:
+   The variable 'GlobalChar' used to pass string values is now called 'Gstring';
+   The variable 'GlobalInt' used to pass numeric values is now called 'Gnumber';
+   The variable 'GlobalCursorRow' used to pass the cursor vertical position is now called 'Grow';
+   A new variable 'Gcol' has been added, to work with 'Grow' by passing horizontal cursor position.
+
+Updated 2021/08/25 by Elizabeth Mills

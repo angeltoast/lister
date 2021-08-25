@@ -9,7 +9,7 @@ DoHeading       Clears the active window and prints a heading.
 DoForm          Prints a centred prompt for user to enter data.
                 Expects one parameter: 
                 $1 A short text message to instruct the user.
-                Sets $GlobalChar with the text entered by the user.
+                Sets $Gstring with the text entered by the user.
 -----------------------------------------------------------------------------------------
 DoMessage       Prints an informative message in a pop-up terminal.
                 Parameters: One or two text messages:
@@ -21,13 +21,13 @@ DoEnum          Enumerates words in a string
                 $1 A string of words; $2 Either a word or a number to be looked up in $1.
                 If $2 is not passed, DoEnum will return the total number of words in $1.
                 Sets the return code $? to the number of the word, and ...
-                global variable $GlobalChar to the word at that number.
+                global variable $Gstring to the word at that number.
 ----------------------------------------------------------------------------------------
 DoYesNo         A really simple yes/no prompt
                 Parameter:
                 $1 A short line of text to which the answer can be yes or no.
                 Sets the return code $? to 1 (yes) or 2 (no) and ...
-                global variable $GlobalChar to 'Yes' or 'No'.
+                global variable $Gstring to 'Yes' or 'No'.
 ----------------------------------------------------------------------------------------
 DoRadio         Prints up to four columns of radio buttons. The user moves the cursor
                 using the cursor keys, and marks one button in each column by pressing 'x'
@@ -35,7 +35,7 @@ DoRadio         Prints up to four columns of radio buttons. The user moves the c
                 $1 Headline text; $2 (and optional $3, $4 & $5) prompt text for the radio
                 buttons (strings of space-separated one-word prompts).
                 The first item in each of $2, $3, $4 & $5 are column headings (required)
-                Sets GlobalChar with the position of the selected item in each column
+                Sets Gstring with the position of the selected item in each column
                 (eg: 4 1 5 2) You can then relate each number to the original string
                 variable using the DoEnum function.
 RadioColumn     (Used by DoRadio - Not intended for direct access by external processes)
@@ -66,8 +66,9 @@ DoMenu          Generates a simple menu of one-word items, centred on the page.
                    (max 15 advised, as we don't want to go off the screen, do we?);
                 $2 Button text, eg: 'Ok Exit';
                 $3 May be a prompt message or empty.
-                Sets the return code $? to the number in the menu of the item
-                selected.
+                Sets Gnumber to the position of the selected item in the menu, and
+                Gstring with the text of the selected item.
+                Sets the return code $? to the number of the button selected.
 -----------------------------------------------------------------------------------------
 DoLongMenu      Generates a menu of multi-word items.
                 Parameters:
@@ -83,8 +84,9 @@ DoLongMenu      Generates a menu of multi-word items.
                       2) Each line no longer than 50 characters, and
                       3) No more than 20 items ...
                           (we don't want to go off the screen, do we?)
-                Sets the return code $? to the number in the menu of the item
-                selected.
+                Sets Gnumber to the position of the selected item in the menu, and
+                Gstring with the text of the selected item.
+                Sets the return code $? to the number of the button selected.
 PrintButtons    (Used by the menu functions - Not intended for access by external processes)
                 Prints a row of buttons.
                 Parameters: 
@@ -100,26 +102,25 @@ SwitchButtons   (Used by the menu functions - Not intended for access by externa
 DoFirstItem     Prints a single item, centred, at the top of the page.
                 Parameter: 
                 $1 Text to print;
-                Sets $GlobalCursorRow for any successive print instructions.
+                Sets $Gstring for any successive print instructions.
 -----------------------------------------------------------------------------------------
 DoNextItem      Prints the next item of a menu
                 Parameters:
-                $1 startpoint; $2 Item text.
-                Sets $GlobalCursorRow for any successive print instructions.
+                $1 Item text.
+                Sets $Gstring for any successive print instructions.
 -----------------------------------------------------------------------------------------
 DoPrintRev      Prints an item in reverse text colour, matched to the length of the longest
                 item in the menu. Used by DoMenu and DoLongMenu, but also available for
                 other uses.
                 Parameters:
-                $1 Startpoint (horizontal position of the first character);
-                $2 Length of the longest menu item (in characters);
-                $3 Item text
-                Sets $GlobalCursorRow for any successive print instructions.
+                $1 Length of the longest menu item (in characters);
+                $2 Item text
+                Sets $Gstring for any successive print instructions.
 ------------------------------------------------------------------------------
 DoKeypress      Used by DoMenu and DoLongMenu, but also available for other uses.
                 Responds to user keypress (cursor keys and Enter)...
                 No parameters.
-                Sets $GlobalInt with a number representing the key pressed:
+                Sets $Gnumber with a number representing the key pressed:
                       (0=Enter; 1=Up; 2=Left; 3=Down; 4=Right)
                .---------------------------------------------------------.
 --------------(  List class .. Display long lists and accept user input   )--------------
@@ -137,8 +138,7 @@ DoLister        Prepares arrays for use by DoSelectPage and DoPrintPage
                 are set by DoPrintPage)
 ListerSelectPage (Used by DoLister to manage page handling - Not intended for direct
                 access by external processes)
-                The arrays used here are declared and initialised in
-                DoLister as global in scope.
+                The arrays used here are declared and initialised in DoLister as global in scope.
                 Parameters (all set by DoLister):
                 $1 = winHeight; $2 = winCentre; $3 lastPage;
                 Returns: No values are set by DoSelectPage (return values are
@@ -149,10 +149,9 @@ ListerPrintPage (Used by DoLister - Not intended for direct access by external p
                 Parameters (all set by ListerSelectPage):
                 $1 winHeight; $2 winCentre; $3 instructions;
                 $4 pageNumber; $5 lastItem
-                The arrays used here are declared and initialised in
-                DoLister as global in scope
-                Sets $GlobalInt to the user input (item number)
-                and $GlobalChar to the detail of the menu item.
+                The arrays used here are declared and initialised in DoLister as global in scope
+                Sets $Gnumber to the user input (item number)
+                and $Gstring to the detail of the menu item.
 -----------------------------------------------------------------------------------------
 DoMega          Generates a (potentially multi-page) numbered list from a file
                 of crude data prepared by the calling program.
@@ -164,4 +163,4 @@ MegaPage        (Used by DoMega - Not intended for direct access by external pro
                 Parameters: $1 pageNumber; $2 pages; $3 display; $4 items; $5 counter
 
 -----------------------------------------------------------------------------------------
-(revision 210514 Elizabeth Mills)
+Revised 2021/08/25 for v2.00 by Elizabeth Mills
