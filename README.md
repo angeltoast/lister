@@ -16,4 +16,4 @@ As of 2021/08/25 **Lister** has been assigned version 2.00 following changes to 
    The variable 'GlobalCursorRow' used to pass the cursor vertical position is now called 'Grow';
    A new variable 'Gcol' has been added, to work with 'Grow' by passing horizontal cursor position.
 
-Updated 2021/08/25 by Elizabeth Mills
+Last updated 2021/08/25 by Elizabeth Mills
