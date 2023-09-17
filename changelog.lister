@@ -1,0 +1,11 @@
+#################################################################################
+###     Lister - Developed by Elizabeth Mills - Version 2.00a 2023/09/17      ###
+#   ---------------------- Revisions since v2.00 -------------------------      #
+# 16 Sep 23: EAM0001 (comment all changed code with this reference)             #
+# 0.    This header block redesigned. Use in all further development.           #
+#       Transfer this block to a changelog when done.                           #
+# 1.    DoMessage now displays in the current process, not a sub-process.       #
+#       This removes the need for xterm to be installed.                        #
+# 2.    Replaced wc with ${#variable} in some places                            #
+# 3.    Corrected bug in MegaPage that sent wrong data to DoNextItem            #
+#################################################################################

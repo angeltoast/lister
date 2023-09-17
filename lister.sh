@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Developed by Elizabeth Mills
-# Version 2.00 2021/08/25
+#################################################################################
+###     Lister - Developed by Elizabeth Mills - Version 2.00a 2023/09/17      ###
+#################################################################################
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,11 +18,11 @@
 #            General Public License for more details.
 
 # Some of these functions share the outcome of their processes via the
-# global variables Gstring and Gnumber. One other global variable
-# is used - Grow, which tracks vertical alignment. All other
+# global variables Gstring and Gnumber. Two other global variables,
+# Grow and Gcol, track vertical and horizontal alignment. All other
 # variables are local to their functions, and values must be passed as
 # parameters between them.
-# See lister.manual for guidance on the use of these functions
+# See lister.manual for guidance on the use of these functions.
 
 # -------------------------------------------------------------
 #       Shared .. General-purpose functions
@@ -68,9 +69,8 @@ function DoHeading    # Always use this function to prepare the screen
     local winwidth limit text textlength
     winwidth=$(tput cols)                          # Recheck window width
     text="$BackTitle"                              # Use Global variable if set
-    textlength=$(echo $text | wc -c)               # Count characters
-    # If text too long for window
-    if [ $textlength -ge $winwidth ]; then
+    textlength=${#text}                            # Count characters
+    if [ $textlength -ge $winwidth ]; then         # If text too long for window
         limit=$((winwidth-2))                      # Limit to 2 characters lt winwidth
         text="${text:0:$limit}"                    # Limit length of printed text
         textlength=$(echo $text | wc -c)           # Recount
@@ -86,20 +86,31 @@ function DoHeading    # Always use this function to prepare the screen
 function DoForm   # Centred prompt for user-entry
 {                 # $1 Text for prompt
                   # Returns user entry through $Gstring
-    local winwidth length empty
+    local winwidth length # empty
     winwidth=$(tput cols); length=${#1}
     if [ ${length} -le ${winwidth} ]; then
         formCol=$(( (winwidth - length) / 2 ))
     else
         formCol=1
     fi
-    tput cup $Grow $formCol                     # Move cursor to Gcol
+    tput cup $Grow $formCol     # Move cursor to Gcol
     read -p "$1" Gstring
 } # End DoForm
 
-function DoMessage    # Display an error message in a pop-up terminal
+function DoMessage    # Display an error message
 {                     # $1 and $2 optional lines of message text
-    xterm -T " Information" -geometry 90x10+300+250 -fa monospace -fs 10 -e "echo '$1' && echo '$2' && read -p 'Please press [Enter] ...'"
+    local winwidth length pin
+    winwidth=$(tput cols); length=${#1}
+    if [ ${length} -le ${winwidth} ]; then
+        pin=$(( (winwidth - length) / 2 ))
+    else
+        pin=1
+    fi
+    DoHeading               # EAM0001
+    tput cup 2 $pin         # Move cursor to start position
+    echo "$1 $2"            # EAM0001
+    tput cup 4 $pin         # Move cursor to start position
+    read -p "Please press [Enter] ..."
 } # End DoMessage
 
 function PrintButtons
@@ -122,7 +133,7 @@ function PrintButtons
         return 1
     fi
     button1="$(echo $1 | cut -d' ' -f1)"      # Text for 1st button
-    characters=$(echo $button1 | wc -c)       # Count characters
+    characters=${#button1}                    # Count characters
     button1Len=$((characters+2))              # Add for braces
     button1string="[ $button1 ]"              # 1st button string
     if [ $buttoncount -gt 1 ]; then           # If second button
@@ -840,6 +851,7 @@ function DoMega   # Cleans up crude data from input file and prepares mega-work.
     items=$(cat $1 | wc -l); items=$((items+1))         # wc counts newlines, so add 1
     winHeight=$(tput lines); display=$((winHeight-6))   # Items to display in one pageful
     pages=$((items/display)); remainder=$((items%display))  # May need extra page
+   
     if [ $pages -eq 0 ]; then
         pages=1
     elif [ $remainder -gt 0 ]; then
@@ -853,11 +865,13 @@ function DoMega   # Cleans up crude data from input file and prepares mega-work.
         line="$i:$line"                                         # Number it
         echo ${line##*( )} | cut -c 1-$width  >> mega-work.file    # cut it down to fit width
     done
+
     if [ $items -le $display ]; then    # DoLongMenu is more convenient for a single page
         DoLongMenu "mega-work.file" "Ok Exit" "$term1"
         rm mega-work.file 2>/dev/null  # Clear the work file
         return $?
     fi
+
     pageNumber=1                # Start at first page
     Grow=2
     counter=1                   # For locating items in the file
@@ -868,8 +882,8 @@ function DoMega   # Cleans up crude data from input file and prepares mega-work.
 } # End DoMega
 
 function MegaPage     # The actual printing bit
-{                       # $1 pageNumber; $2 pages; $3 display; #4 items; $5 counter;
-                        # $6 information to be printed above the list
+{                     # $1 pageNumber; $2 pages; $3 display; #4 items; $5 counter;
+                      # $6 information to be printed above the list
     local advise previous next instructions pages pageNumber term1
     local winHeight items i counter line display saveCursorRow
     advise="Or ' ' to exit without choosing"
@@ -891,17 +905,19 @@ function MegaPage     # The actual printing bit
         Grow=2
         DoFirstItem "Page $pageNumber of $pages"
         Grow=3
-        # Print a pageful up to max number of lines to display
+
         for (( line=1; line <= $display; ++line ))
+        # Print a pageful up to max number of lines to display
         do
-            megaCol=2
             item=$(head -n $counter mega-work.file | tail -1)  # Read item from file
+
             if [ $line -eq 1 ]; then                        # First item on this page
-                tput cup $Grow $megaCol                 # Move cursor to start
+                tput cup $Grow $Gcol                        # Move cursor to start
                 printf "%-s\\v" "$item"                     # Print the item
             else
-                DoNextItem 2 "$item"
+                DoNextItem "$item"                          # Bug fix EAM0001
             fi
+
             counter=$((counter+1))
             if [ $counter -gt $items ]; then                # Exit loop if last record
                 Grow=$((Grow+1))
@@ -909,6 +925,7 @@ function MegaPage     # The actual printing bit
             fi
             Grow=$((Grow+1))
         done
+
         DoFirstItem "$instructions"
         DoFirstItem "$advise"
         DoForm "Enter the number of your selection : "
@@ -1234,3 +1251,11 @@ function RadioSelect {  # Highlight the top radio button of the first column, th
     done
 } # End RadioSelect
 # End Lists
+
+function Debug() {
+    # Copy and insert at any point ...
+    # Debug "$BASH_SOURCE" "$FUNCNAME" "$LINENO" " any variables "
+    echo            # Make sure output is on a new line
+    read -p "In file: $1, function:$2, at line:$3 $4"
+    return 0
+} # End Debug
