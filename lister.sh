@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#################################################################################
-###     Lister - Developed by Elizabeth Mills - Version 2.00a 2023/09/17      ###
-#################################################################################
+################################################################################
+###	Lister - Developed by Elizabeth Mills - Version 2.00b EAM0002 2023/10/12 ###
+################################################################################
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,6 +56,7 @@
 # RadioSelect      1152 Responds to user input via cursor keys
 # ---------------------------------------------------------------
 # Global variables
+Gtitle=""       # For headings
 Gnumber=0       # Output (menu item number)
 Gstring=""      # Output (menu item text)
 Grow=0          # For row alignment across functions
@@ -68,7 +69,7 @@ function DoHeading    # Always use this function to prepare the screen
     clear
     local winwidth limit text textlength
     winwidth=$(tput cols)                          # Recheck window width
-    text="$BackTitle"                              # Use Global variable if set
+    text="$Gtitle"                                 # Use global title if set
     textlength=${#text}                            # Count characters
     if [ $textlength -ge $winwidth ]; then         # If text too long for window
         limit=$((winwidth-2))                      # Limit to 2 characters lt winwidth
@@ -236,7 +237,7 @@ function DoMenu  # Simple menu
         # and Gstring with the text of the item selected
         # Sets the system return value ($?) with the number of the button selected
     local winwidth padding itemlen longest counter menulist
-    local name items buttontext message buttonRow item i
+    local name items buttontext message buttonRow item i column
     winwidth=$(tput cols); padding=""; longest=1
     if [[ "$1" == "" ]]; then
         DoMessage "No data to work with"
@@ -500,9 +501,10 @@ function DoLongMenu    # Advanced menuing function with extended descriptions
     done
 } # End DoLongMenu
 
-function DoFirstItem  # Aligned text according to screen size
-{                                               # $1 Text to print
+function DoFirstItem  # Aligned text according to screen size. May be a menu item.
+{   # $1 Text to print	$2 (if present = false - not a menu item)				!* EAM002 *!
     local winwidth maxlen textprint textlength
+    local isMenu="$1"
     winwidth=$(tput cols)                       # Recheck window width
     maxlen=$((winwidth-2))                      # Limit to 2 characters < Width
     textprint="$1"                              # Text passed from caller
@@ -511,8 +513,13 @@ function DoFirstItem  # Aligned text according to screen size
         textprint="${textprint:0:$maxlen}"      # Limit to printable length
         textlength=$maxlen
     fi
-    fiCol=$(( (winwidth - textlength) / 2 ))     # Start point
-    tput cup $Grow $fiCol                        # Move cursor to Gcol
+    if [ "$isMenu" ]; then								# Not a menu item				!* EAM002 *!
+		fiCol=$(( (winwidth - textlength) / 2 ))  # First item start point	!* EAM002 *!
+		tput cup $Grow $fiCol                     # Move cursor to fiCol		!* EAM002 *!
+    else														# Is a menu item				!* EAM002 *!
+		Gcol=$(( (winwidth - textlength) / 2 ))   # First item start point	!* EAM002 *!
+		tput cup $Grow $Gcol                      # Move cursor to Gcol		!* EAM002 *!
+	fi
     printf "%-s\\v" "$textprint"                # Print the item
     Grow=$((Grow+1))                            # Advance line counter
     return 0
@@ -762,7 +769,7 @@ function ListerPrintPage      # Prints the page prepared and selected in ListerS
     local winHeight winCentre topRow
     winHeight=$1; winCentre=$2; instrLen=${#3}; instructions="$3"
     pageNumber="$4"; lastItem="$5"; counter=1
-    DoHeading $BackTitle                          # Prepare window
+    DoHeading $Gtitle                          # Prepare window
     DoFirstItem "Page $pageNumber of $lastPage"
     thisPage="${GlobalPagesArray[${pageNumber}]}" # Get column numbers for this page
     pageWidth=${GlobalPageWidthsArray[${pageNumber}]}  # Get width of this page

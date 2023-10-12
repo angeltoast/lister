@@ -1,11 +1,15 @@
-#################################################################################
-###     Lister - Developed by Elizabeth Mills - Version 2.00a 2023/09/17      ###
-#   ---------------------- Revisions since v2.00 -------------------------      #
-# 16 Sep 23: EAM0001 (comment all changed code with this reference)             #
-# 0.    This header block redesigned. Use in all further development.           #
-#       Transfer this block to a changelog when done.                           #
-# 1.    DoMessage now displays in the current process, not a sub-process.       #
-#       This removes the need for xterm to be installed.                        #
-# 2.    Replaced wc with ${#variable} in some places                            #
-# 3.    Corrected bug in MegaPage that sent wrong data to DoNextItem            #
-#################################################################################
+################################################################################
+###     					Lister - Developed by Elizabeth Mills       				  ###
+# ---------- Version 2.00a 2023/09/17 ---- Revisions since v2.00 ------------- #
+# 				EAM0001 (all changed code commented with this reference)           #
+# 0.    This header block designed for use in all further development.         #
+#       Use a similar block in all changelogs				                      #
+# 1.    DoMessage now displays in the current process, not a sub-process.      #
+#       This removes the need for xterm to be installed.                       #
+# 2.    Replaced wc with ${#variable} in some places                           #
+# 3.    Corrected bug in MegaPage that sent wrong data to DoNextItem           #
+# ---------- Version 2.00b 2023/10/12 ---- Revisions since v2.00a ------------ #
+# 				EAM0002 (all changed code commented with this reference)           #
+# 1.    DoFirstItem adapted to only change Gcol if NOT a menu item. It         #
+#       must be explicitly passed as non-empty new 2nd argument.		          #
+################################################################################
